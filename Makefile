@@ -1,5 +1,5 @@
 server:	server.c server.h
-	gcc -g -Wall -lpthread server.c -o server
+	gcc -g -Wall -pthread -lpthread server.c -o server
 
 clean:
 	rm -f server
