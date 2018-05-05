@@ -1,2 +1,5 @@
-server:	server.c
-	gcc -Wall server.c -o server -lpthread
+server:	server.c server.h
+	gcc -g -Wall -lpthread server.c -o server
+
+clean:
+	rm -f server
