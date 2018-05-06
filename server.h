@@ -4,7 +4,6 @@
 #define TAILLE_GRILLE 16
 
 #define MAX_CLIENTS 3
-#define BUF_SIZE	1024
 
 /*========== Definitions de Structure ==========*/
 
@@ -27,7 +26,5 @@ void print_args();
 int init_socket(int port);
 
 void handling_clients_loop(int socket_desc_server);
-
-void* client_handler(void* socket_desc_client);
 
 #endif
