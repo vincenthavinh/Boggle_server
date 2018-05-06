@@ -8,6 +8,7 @@
 #include <sys/socket.h>
 #include <netinet/in.h>
 
+#include "structures.h"
 #include "server.h"
 #include "thread_client.h"
 
