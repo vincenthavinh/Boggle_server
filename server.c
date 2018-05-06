@@ -10,11 +10,6 @@
 
 #include "server.h"
 
-typedef int SOCKET;
-typedef struct sockaddr_in SOCKADDR_IN;
-typedef struct sockaddr SOCKADDR;
-typedef struct in_addr IN_ADDR;
-
 //./server -g 2 ABCDEFGHIJKLMNOP KGROJFUNTZOLKSUE -t 2 -p 2010
 
 
@@ -53,28 +48,25 @@ void parse_command_line(int argc, char* argv[]){
 				opt_grilles = TRUE;
 
 				i++;
-				n_grilles = atoi(argv[i]);
+				nb_grilles = atoi(argv[i]);
 
 				//on alloue le pointeur grilles.
-				grilles = (char**) malloc (n_grilles * sizeof(char*));
+				grilles = (char**) malloc (nb_grilles * sizeof(char*));
 				
 				int j;
-				for(j=0; j<n_grilles; j++){
-					//on alloue la grille (char*).
-					grilles[j] = (char*) malloc (TAILLE_GRILLE * sizeof(char));
-
-					//on copie les n_grilles arguments suivants dans les cases du tableau grilles.
+				for(j=0; j<nb_grilles; j++){
 					i++;
 					if(strlen(argv[i])!=16){
 						printf("\nERREUR: grille %s de taille %zd\n",argv[i], strlen(argv[i]));
 						exit(1);
 					}
-					strncpy(grilles[j], argv[i], TAILLE_GRILLE);
+					//on copie la chaine passee dans argv[i] dans grilles[j].
+					grilles[j] = strndup(argv[i], TAILLE_GRILLE);
 				}
 
-				/*printf("-t %d ", n_grilles);
+				/*printf("-t %d ", nb_grilles);
 				int k; 
-				for(k=0; k<n_grilles; k++) 
+				for(k=0; k<nb_grilles; k++) 
 					printf("%.*s ", TAILLE_GRILLE, grilles[k]);
 				printf("\n");*/
 			}
@@ -98,20 +90,21 @@ void parse_command_line(int argc, char* argv[]){
 }
 
 void print_args(){
-	printf("port : %d\ntours : %d\nimmediat: %d\nopt_grilles: %d\ngrilles: %d\n", 
-		port, n_tours, immediat, opt_grilles, n_grilles);
+	printf("========== PARAMETRES SERVEUR ==========\n");
+	printf("port : %d\ntours : %d\nimmediat: %s\ngrilles: %s\nnb_grilles: %d\n", 
+		port, n_tours, (immediat?"oui":"non"), (opt_grilles?"fixes":"aleatoires"), nb_grilles);
 	int i;
-	for(i=0; i<n_grilles;i++)
+	for(i=0; i<nb_grilles;i++)
 		printf("%.*s ", TAILLE_GRILLE, grilles[i]);
-	printf("\n");
+	printf("\n========================================\n\n");
 }
 
 int init_socket(int port){
 
 	//creation socket
-	int socket_desc = socket(AF_INET, SOCK_STREAM, 0);
+	int sock = socket(AF_INET, SOCK_STREAM, 0);
 
-	if(socket_desc == -1){
+	if(sock == -1){
 		perror("socket()");
 		exit(errno);
 	}
@@ -124,18 +117,46 @@ int init_socket(int port){
 	sin_server.sin_family = AF_INET;
 
 	//bind
-	if(bind(socket_desc,(struct sockaddr*) &sin_server, sizeof(sin_server)) == -1){
+	if(bind(sock,(struct sockaddr*) &sin_server, sizeof(sin_server)) == -1){
 		perror("bind()");
 		exit(errno);
 	}
 
 	//listen
-	if(listen(socket_desc, MAX_CLIENTS) == -1){
+	if(listen(sock, MAX_CLIENTS) == -1){
 		perror("listen()");
 		exit(errno);
 	}
 
-	return socket_desc;
+	return sock;
+}
+
+void handling_clients_loop(int sock_server){
+	//settings client
+	struct sockaddr_in sin_client = { 0 };
+	size_t sin_client_size = sizeof(sin_client);
+	pthread_t thread_id;
+	int sock_client;
+	
+	//boucle d'ecoute
+	//accept() est bloquant => on execute le corps del a boucle quand un client arrive
+	while( (sock_client = accept(sock_server, 
+			(struct sockaddr*) &sin_client, (socklen_t*) &sin_client_size)) ){
+		
+		if(sock_client == -1) {
+			perror("accept()");
+			continue;
+		}
+
+		//creation du pthread du client
+		if( pthread_create( &thread_id , NULL ,  client_handler , 
+					(void*) &sock_client) != 0)
+				{
+						perror("pthread_create()");
+						continue;
+				}
+
+	}
 }
 
 int main(int argc, char* argv[]) {
@@ -145,38 +166,51 @@ int main(int argc, char* argv[]) {
 	print_args(); //pour l'instant ne marche qu'avec des chaines precisees en arg.
 
 	//creation socket d'ecoute du serveur.
-	int socket_desc_server = init_socket(port);
+	int sock_server = init_socket(port);
 
-	//settings client
-  struct sockaddr_in sin_client = { 0 };
-  size_t sin_client_size = sizeof(sin_client);
-  pthread_t thread_id;
-	int socket_desc_client;
-  
-  //boucle d'ecoute
-  //accept() est bloquant => on execute le corps del a boucle quand un client arrive
-  while( (socket_desc_client = accept(socket_desc_server, 
-  		(struct sockaddr*) &sin_client, (socklen_t*) &sin_client_size)) ){
-  	
-  	if(socket_desc_client == -1) {
-  		perror("accept()");
-  		continue;
-  	}
-
-  	//creation du pthread du client
-		if( pthread_create( &thread_id , NULL ,  client_handler , 
-					(void*) &socket_desc_client) != 0)
-        {
-            perror("pthread_create()");
-            return 1;
-        }
-
-  }
+	handling_clients_loop(sock_server);
 
 	return 0;
 }
 
-void* client_handler(void* socket_desc) {
-	printf("\nclient connecte!\n");
+
+
+void* client_handler(void* sock_client) {
+	int int_client = *(int*)sock_client;
+	
+	printf("\n%d: client %d connecte!\n",int_client,  int_client);
+
+	char buffer[BUF_SIZE];
+	int bytes_rec = 0;
+	//char* last_newline;
+
+	while (1)
+	{
+		/*Reception d'un message du client dans le buffer.
+		 *On remplace le '\n' de terminaison de commande par '\0'*/
+		bytes_rec = recv(int_client, &buffer, BUF_SIZE-1, 0);
+		if (bytes_rec <=0) break;
+
+	  char* last_newline = memchr(buffer, '\n', bytes_rec);
+	  if (last_newline == NULL) {
+			perror("memchr");
+			exit(1);
+		}
+		*last_newline = '\0';
+
+		/*affichage du message*/
+		printf("%s\n", buffer);
+
+		/*parsing du message*/
+		
+	}
+
+	if (bytes_rec == -1) {
+		perror("recv");
+	}
+	else if (bytes_rec == 0) {
+		// EOS on the socket: close it, exit the thread, etc.
+	}
+
 	return NULL;
 }
