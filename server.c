@@ -137,26 +137,31 @@ void handling_clients_loop(int sock_server){
 	//settings client
 	struct sockaddr_in sin_client = { 0 };
 	size_t sin_client_size = sizeof(sin_client);
-	pthread_t thread_id;
-	int sock_client;
+	pthread_t thread_id = NULL;
+	printf("before %lu\n", thread_id);
+	printf("before %lu\n", threads.clients[1]);
 	
 	//boucle d'ecoute
-	//accept() est bloquant => on execute le corps del a boucle quand un client arrive
-	while( (sock_client = accept(sock_server, 
-			(struct sockaddr*) &sin_client, (socklen_t*) &sin_client_size)) ){
+	while(1){
 		
+		//accept() est bloquant => on eexecute la suite quand un client arrive
+		int sock_client = accept(sock_server, 
+			(struct sockaddr*) &sin_client, (socklen_t*) &sin_client_size);
+
 		if(sock_client == -1) {
-			perror("accept()");
+			perror("accept() returned -1");
 			continue;
 		}
 
+
+
 		//creation du pthread du client
 		if( pthread_create( &thread_id , NULL ,  client_handler , 
-					(void*) &sock_client) != 0)
-				{
-						perror("pthread_create()");
-						continue;
-				}
+					(void*) &sock_client) != 0){
+			perror("pthread_create()");
+			continue;
+		}
+
 
 	}
 }

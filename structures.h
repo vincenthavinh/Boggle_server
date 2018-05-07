@@ -1,6 +1,7 @@
 #ifndef STRUCTURES_H
 #define STRUCTURES_H
 
+
 /*========== Definitions de Structures ==========*/
 
 typedef enum { FALSE, TRUE } boolean;

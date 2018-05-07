@@ -27,9 +27,8 @@ int recv_message(int sock, char buffer[]){
 int index_of_slash(char buffer[]) {
 		char* slash = strchr(buffer, '/');
 		if (slash == NULL) {
-			printf("strchr renvoie pointeur sur null\n");
-			perror("strchr on index_of_slash");
-			exit(1);
+			printf("strchr renvoie pointeur sur null: pas de '/' trouve\n");
+			return -1;
 		}
 		int i_slash = (int)(slash - buffer);
 		return i_slash;
@@ -77,11 +76,12 @@ void* client_handler(void* sock_client) {
 		if (bytes_rec <=0) break;
 
 		/*affichage du message*/
-		printf("%s\n", buffer_in);
+		printf("TAILLE : %d, MSG: %s\n", bytes_rec, buffer_in);
 
 		/*parsing du message*/
 		int i_start = 0;
 		int i_slash = index_of_slash(buffer_in);
+		if((i_slash)==-1) continue; 
 
 		comm_client comm = get_command(buffer_in, i_start, i_slash);
 
@@ -118,10 +118,11 @@ void* client_handler(void* sock_client) {
 	}
 
 	if (bytes_rec == -1) {
+		printf("ERREUR recv: %d\n", bytes_rec);
 		perror("recv");
 	}
 	else if (bytes_rec == 0) {
-		// EOS on the socket: close it, exit the thread, etc.
+		printf("CO FINIE recv: %d\n", bytes_rec);
 	}
 
 	return NULL;
