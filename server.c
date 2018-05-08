@@ -8,7 +8,7 @@
 #include <sys/socket.h>
 #include <netinet/in.h>
 
-#include "structures.h"
+#include "global.h"
 #include "server.h"
 #include "thread_client.h"
 
@@ -16,6 +16,15 @@
 
 
 void parse_command_line(int argc, char* argv[]){
+	/*initialisiation par defaut*/
+	port = 2018;
+	nb_grilles = 1;
+	nb_tours = 1;
+
+	immediat = FALSE;
+	opt_grilles = FALSE;
+
+	/*initialisation selon ligne de commande*/
 	if(argc > 1){
 
 		int i;
@@ -38,8 +47,8 @@ void parse_command_line(int argc, char* argv[]){
 				strcmp(argv[i],"-t") == 0)
 			{
 				i++;
-				n_tours = atoi(argv[i]);
-				//printf("-t %d\n", n_tours);
+				nb_tours = atoi(argv[i]);
+				//printf("-t %d\n", nb_tours);
 			}
 
 			/*OPTION GRILLES*/
@@ -94,7 +103,7 @@ void parse_command_line(int argc, char* argv[]){
 void print_args(){
 	printf("========== PARAMETRES SERVEUR ==========\n");
 	printf("port : %d\ntours : %d\nimmediat: %s\ngrilles: %s\nnb_grilles: %d\n", 
-		port, n_tours, (immediat?"oui":"non"), (opt_grilles?"fixes":"aleatoires"), nb_grilles);
+		port, nb_tours, (immediat?"oui":"non"), (opt_grilles?"fixes":"aleatoires"), nb_grilles);
 	int i;
 	for(i=0; i<nb_grilles;i++)
 		printf("%.*s ", TAILLE_GRILLE, grilles[i]);
@@ -133,14 +142,36 @@ int init_socket(int port){
 	return sock;
 }
 
+void init_clients(){
+	int i;
+	for(i=0; i<MAX_CLIENTS; i++){
+		clients[i] = (client*) malloc (sizeof(client));
+		clients[i]->is_co = FALSE;
+		clients[i]->sock = -1;
+		clients[i]->score = 0;
+		clients[i]->user = (char*) malloc (TAILLE_USER * sizeof(char));
+		clients[i]->mot = (char*) malloc (TAILLE_MOT * sizeof(char));
+		memset(clients[i]->user, '\0', TAILLE_USER);
+		memset(clients[i]->mot, '\0', TAILLE_MOT);
+
+		pthread_mutex_t temp = PTHREAD_MUTEX_INITIALIZER;
+		clients[i]->mutex = temp;
+
+			pthread_mutex_lock(& (clients[0]->mutex));
+	pthread_mutex_unlock(& (clients[0]->mutex));
+	}
+}
+
 void handling_clients_loop(int sock_server){
 	//settings client
 	struct sockaddr_in sin_client = { 0 };
 	size_t sin_client_size = sizeof(sin_client);
 	pthread_t thread_id = NULL;
-	printf("before %lu\n", thread_id);
-	printf("before %lu\n", threads.clients[1]);
-	
+
+	/*initialisation du tableau de clients* */
+	init_clients();
+
+
 	//boucle d'ecoute
 	while(1){
 		

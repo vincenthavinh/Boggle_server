@@ -5,7 +5,7 @@
 #include <sys/types.h>
 #include <sys/socket.h>
 
-#include "structures.h"
+#include "global.h"
 #include "thread_client.h"
 
 int recv_message(int sock, char buffer[]){
