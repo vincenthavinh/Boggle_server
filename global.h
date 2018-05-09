@@ -52,8 +52,9 @@ typedef enum {
 } mess_server;
 
 typedef struct {
-	pthread_mutex_t* mutex;
+	pthread_rwlock_t* rwlock;
 	boolean is_co;
+	boolean is_ready;	
 	int sock;
 	char* user;
 	int score ;
@@ -75,5 +76,6 @@ boolean opt_grilles;
 
 client* clients[MAX_CLIENTS];
 sem_t* slots_clients;
+pthread_mutex_t* check_co;
 
 #endif

@@ -4,18 +4,18 @@
 int recv_message(int sock, char buffer[]){
 	/*Reception d'un message du client dans le buffer.
 	 *On remplace le '\n' de terminaison de commande par '\0'*/
-	int bytes_rec = recv(sock, buffer, BUF_SIZE-1, 0);
-	if (bytes_rec <=0) return bytes_rec;
+	int bytes_in = recv(sock, buffer, BUF_SIZE-1, 0);
+	if (bytes_in <=0) return bytes_in;
 
-	char* newline = memchr(buffer, '\n', bytes_rec);
+	char* newline = memchr(buffer, '\n', bytes_in);
 	if (newline == NULL) {
 		printf("ERREUR memchr : pas de '\\n' en fin de message.");
-		printf("msg : [%.*s]", bytes_rec, buffer);
-		return bytes_rec;
+		printf("msg : [%.*s]", bytes_in, buffer);
+		return bytes_in;
 	}
 	*newline = '\0';
 
-	return bytes_rec;
+	return bytes_in;
 }
 
 int index_of_slash(char buffer[]) {
@@ -46,47 +46,77 @@ comm_client get_command(char buffer[], int i_start, int i_end) {
 	return non_reconnu;
 }
 
-void add_to_message(char buffer[], int len) {
+void comm_bienvenue(char* buffer_in,int i_start, char* buffer_out, int slot){
+	int i_slash = index_of_slash(buffer_in + i_start);
 
-}
-
-void send_message(int sock, char* comm, char* arg1, char* arg2) {
-
-}
-
-void* client_handler(void* sock_client) {
-	int int_client = *(int*)sock_client;
+	pthread_rwlock_wrlock(clients[slot]->rwlock);
+	//LOCK ECRITURE (et lecture)
+	if(clients[slot]->is_ready == TRUE){
+		printf("erreur: CONNEXION/ deja recu pour ce client.\n");
+		pthread_rwlock_unlock(clients[slot]->rwlock);
 	
-	printf("\n%d: client %d connecte!\n",int_client,  int_client);
+	}else{
+		//on enregistre le pseudo de l'user, et on le passe en etat ready
+		clients[slot]->is_ready = TRUE;
+		memcpy(clients[slot]->user, buffer_in + i_start, i_slash);
+		
+		//UNLOCK
+		pthread_rwlock_unlock(clients[slot]->rwlock);
 
-	char buffer_in[BUF_SIZE] = { 0 };
-	char buffer_out[BUF_SIZE] = { 0 };
-	int bytes_rec;
+		/*reponse BIENVENUE*/
+		strcat(buffer_out, "BIENVENUE/");
+
+		pthread_rwlock_rdlock(clients[slot]->rwlock);
+		//LOCK LECTURE
+
+		strcat(buffer_out, clients[slot]->user);
+		strcat(buffer_out, "/\n");
+
+		printf("%zd: %s\n", strlen(buffer_out), buffer_out);
+		send(clients[slot]->sock, buffer_out, strlen(buffer_out), 0);
+		//UNLOCK
+
+		pthread_rwlock_unlock(clients[slot]->rwlock);
+
+			//envoi message connecte aux autres clients
+	}
+
+	buffer_out[0]='\0';
+}
+
+void* client_handler(void* slot_client) {
+	int slot = *(int*) slot_client;
+	
+	printf("\n%d: client %d connecte!\n",slot,  slot);
+
+	char buffer_in[BUF_SIZE] = { 0 }; //buffer d'entree
+	char buffer_out[BUF_SIZE] = { 0 }; //buffer de sortie
+	int bytes_in = 0; //bytes ecrites dans le buffer_in
 
 	while (1)
 	{
 		/*reception du message*/
-		bytes_rec = recv_message(int_client, buffer_in);
-		if (bytes_rec <=0) break;
+		bytes_in = recv_message(clients[slot]->sock, buffer_in);
+		if (bytes_in <=0) break;
 
 		/*affichage du message*/
-		printf("TAILLE : %d, MSG: %s\n", bytes_rec, buffer_in);
+		printf("TAILLE : %d, MSG: %s\n", bytes_in, buffer_in);
 
 		/*parsing du message*/
 		int i_start = 0;
 		int i_slash = index_of_slash(buffer_in);
-		if((i_slash)==-1) continue; 
+		if((i_slash)==-1) continue;
 
 		comm_client comm = get_command(buffer_in, i_start, i_slash);
 
 		i_start = i_slash +1;
-		i_slash = index_of_slash(buffer_in + i_start);
 		//printf("%.*s\n", i_slash, buffer + i_start );
 
 		switch(comm){
 
 			case CONNEXION:
 				printf("case CONNEXION\n");
+				comm_bienvenue(buffer_in, i_start , buffer_out, slot);
 				break;
 
 			case SORT:
@@ -111,13 +141,18 @@ void* client_handler(void* sock_client) {
 		}
 	}
 
-	if (bytes_rec == -1) {
-		printf("ERREUR recv: %d\n", bytes_rec);
+	if (bytes_in == -1) {
+		printf("ERREUR recv: %d\n", bytes_in);
 		perror("recv");
 	}
-	else if (bytes_rec == 0) {
-		printf("CO FINIE recv: %d\n", bytes_rec);
+	else if (bytes_in == 0) {
+		/*sur deconnexion propre du client:*/
+		printf("CO FINIE recv: %d\n", bytes_in);
+
+		//on incremente la semaphore de slots clients disponibles
 		sem_post(slots_clients);
+
+		//
 	}
 
 	return NULL;

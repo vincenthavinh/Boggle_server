@@ -2,7 +2,7 @@
 #include "server.h"
 #include "thread_client.h"
 
-//./server -g 2 ABCDEFGHIJKLMNOP KGROJFUNTZOLKSUE -t 2 -p 2010
+//./server -g 2 ABCDEFGHIJKLMNOP KGROJFUNTZOLKSUE -t 2 -p 2018
 
 
 void parse_command_line(int argc, char* argv[]){
@@ -136,11 +136,15 @@ void init_clients(){
 	slots_clients = (sem_t*) malloc (sizeof(sem_t));
 	sem_init(slots_clients, 0, MAX_CLIENTS);
 
+	check_co = (pthread_mutex_t*) malloc (sizeof(pthread_mutex_t));
+	pthread_mutex_init(check_co, NULL);
+
 	int i;
 	for(i=0; i<MAX_CLIENTS; i++){
 		clients[i] = (client*) malloc (sizeof(client));
 
 		clients[i]->is_co = FALSE;
+		clients[i]->is_ready = FALSE;
 		clients[i]->sock = -1;
 		clients[i]->score = 0;
 
@@ -149,9 +153,37 @@ void init_clients(){
 		memset(clients[i]->user, '\0', TAILLE_USER);
 		memset(clients[i]->mot, '\0', TAILLE_MOT);
 
-		clients[i]->mutex = (pthread_mutex_t*) malloc (sizeof(pthread_mutex_t));
-		pthread_mutex_init(clients[i]->mutex, NULL);
+		clients[i]->rwlock = (pthread_rwlock_t*) malloc (sizeof(pthread_rwlock_t));
+		pthread_rwlock_init(clients[i]->rwlock, NULL);
 	}
+}
+
+int ajout_client(int sock_client){
+	int i;
+	for(i=0; i<MAX_CLIENTS; i++){
+
+		//On bloque les tentatives d'acces aux booleens is_co des clients
+		pthread_mutex_lock(check_co);
+		
+		if(clients[i]->is_co == FALSE){
+
+			pthread_rwlock_wrlock(clients[i]->rwlock);
+
+			clients[i]->sock = sock_client;
+			clients[i]->is_co = TRUE;
+			clients[i]->is_ready = FALSE;
+			clients[i]->score = 0;
+			memset(clients[i]->user, '\0', TAILLE_USER);
+			memset(clients[i]->mot, '\0', TAILLE_MOT);
+
+			pthread_rwlock_unlock(clients[i]->rwlock);
+			break;
+		}
+
+		pthread_mutex_unlock(check_co);
+	}
+
+	return i;
 }
 
 void handling_clients_loop(int sock_server){
@@ -175,7 +207,7 @@ void handling_clients_loop(int sock_server){
 		/*si un slot client est disponible (bloquant)*/
 		sem_wait(slots_clients);
 
-		//accept() est bloquant => on eexecute la suite quand un client arrive
+		//accept() est bloquant => on execute la suite quand un client arrive
 		int sock_client = accept(sock_server, 
 			(struct sockaddr*) &sin_client, (socklen_t*) &sin_client_size);
 
@@ -184,18 +216,12 @@ void handling_clients_loop(int sock_server){
 			continue;
 		}
 
-		int i;
-		for(i=0; i<MAX_CLIENTS; i++){
-			pthread_mutex_lock(clients[i]->mutex);
-			if(clients[i]->is_co == FALSE){
-				clients[i]->sock = sock_client;
-			}
-			pthread_mutex_unlock(clients[i]->mutex);
-		}
+		//stockage et reinitialisation du client dans le tableau de clients* */
+		int num_client = ajout_client(sock_client);
 
 		//creation du pthread du client
 		if( pthread_create( &thread_id , NULL ,  client_handler , 
-					(void*) &sock_client) != 0){
+					(void*) &num_client) != 0){
 			perror("pthread_create()");
 			continue;
 		}
