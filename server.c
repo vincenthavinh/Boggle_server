@@ -1,13 +1,3 @@
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#include <errno.h>
-#include <pthread.h>
-
-#include <sys/types.h>
-#include <sys/socket.h>
-#include <netinet/in.h>
-
 #include "global.h"
 #include "server.h"
 #include "thread_client.h"
@@ -143,22 +133,24 @@ int init_socket(int port){
 }
 
 void init_clients(){
+	slots_clients = (sem_t*) malloc (sizeof(sem_t));
+	sem_init(slots_clients, 0, MAX_CLIENTS);
+
 	int i;
 	for(i=0; i<MAX_CLIENTS; i++){
 		clients[i] = (client*) malloc (sizeof(client));
+
 		clients[i]->is_co = FALSE;
 		clients[i]->sock = -1;
 		clients[i]->score = 0;
+
 		clients[i]->user = (char*) malloc (TAILLE_USER * sizeof(char));
 		clients[i]->mot = (char*) malloc (TAILLE_MOT * sizeof(char));
 		memset(clients[i]->user, '\0', TAILLE_USER);
 		memset(clients[i]->mot, '\0', TAILLE_MOT);
 
-		pthread_mutex_t temp = PTHREAD_MUTEX_INITIALIZER;
-		clients[i]->mutex = temp;
-
-			pthread_mutex_lock(& (clients[0]->mutex));
-	pthread_mutex_unlock(& (clients[0]->mutex));
+		clients[i]->mutex = (pthread_mutex_t*) malloc (sizeof(pthread_mutex_t));
+		pthread_mutex_init(clients[i]->mutex, NULL);
 	}
 }
 
@@ -168,13 +160,21 @@ void handling_clients_loop(int sock_server){
 	size_t sin_client_size = sizeof(sin_client);
 	pthread_t thread_id = NULL;
 
-	/*initialisation du tableau de clients* */
+	/*initialisation du tableau de clients et sa semaphore d'acces*/
 	init_clients();
 
+	int a;
+	sem_getvalue(slots_clients, &a);
+	printf("CAPACITE : %d\n", a);
+	/*pthread_mutex_lock(clients[0]->mutex);
+	pthread_mutex_unlock(clients[0]->mutex);*/
 
 	//boucle d'ecoute
 	while(1){
 		
+		/*si un slot client est disponible (bloquant)*/
+		sem_wait(slots_clients);
+
 		//accept() est bloquant => on eexecute la suite quand un client arrive
 		int sock_client = accept(sock_server, 
 			(struct sockaddr*) &sin_client, (socklen_t*) &sin_client_size);
@@ -184,7 +184,14 @@ void handling_clients_loop(int sock_server){
 			continue;
 		}
 
-
+		int i;
+		for(i=0; i<MAX_CLIENTS; i++){
+			pthread_mutex_lock(clients[i]->mutex);
+			if(clients[i]->is_co == FALSE){
+				clients[i]->sock = sock_client;
+			}
+			pthread_mutex_unlock(clients[i]->mutex);
+		}
 
 		//creation du pthread du client
 		if( pthread_create( &thread_id , NULL ,  client_handler , 

@@ -1,10 +1,3 @@
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-
-#include <sys/types.h>
-#include <sys/socket.h>
-
 #include "global.h"
 #include "thread_client.h"
 
@@ -16,8 +9,9 @@ int recv_message(int sock, char buffer[]){
 
 	char* newline = memchr(buffer, '\n', bytes_rec);
 	if (newline == NULL) {
-		perror("memchr on recv_message");
-		exit(1);
+		printf("ERREUR memchr : pas de '\\n' en fin de message.");
+		printf("msg : [%.*s]", bytes_rec, buffer);
+		return bytes_rec;
 	}
 	*newline = '\0';
 
@@ -91,7 +85,7 @@ void* client_handler(void* sock_client) {
 
 		switch(comm){
 
-			case CONNECTION:
+			case CONNEXION:
 				printf("case CONNECTION\n");
 				break;
 
@@ -123,6 +117,7 @@ void* client_handler(void* sock_client) {
 	}
 	else if (bytes_rec == 0) {
 		printf("CO FINIE recv: %d\n", bytes_rec);
+		sem_post(slots_clients);
 	}
 
 	return NULL;

@@ -1,6 +1,18 @@
 #ifndef GLOBAL_H
 #define GLOBAL_H
 
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <errno.h>
+
+#include <pthread.h>
+#include <semaphore.h>
+
+#include <sys/types.h>
+#include <sys/socket.h>
+#include <netinet/in.h>
+
 /*========== macros (constantes) ==========*/
 
 #define TAILLE_GRILLE 16
@@ -40,7 +52,7 @@ typedef enum {
 } mess_server;
 
 typedef struct {
-	pthread_mutex_t mutex;
+	pthread_mutex_t* mutex;
 	boolean is_co;
 	int sock;
 	char* user;
@@ -62,5 +74,6 @@ boolean opt_grilles;
 /*========== autres ==========*/
 
 client* clients[MAX_CLIENTS];
+sem_t* slots_clients;
 
 #endif
