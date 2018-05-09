@@ -28,7 +28,7 @@
 typedef enum { FALSE, TRUE } boolean;
 
 typedef enum { 
-	CONNECTION,
+	CONNEXION,
 	SORT,
 	TROUVE,
 	ENVOI,

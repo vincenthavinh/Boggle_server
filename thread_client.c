@@ -32,8 +32,8 @@ int index_of_slash(char buffer[]) {
 comm_client get_command(char buffer[], int i_start, int i_end) {
 	int cmp_length = i_end - i_start;
 
-	if(strncmp(buffer + i_start, "CONNECTION", cmp_length) == 0)
-		return CONNECTION;
+	if(strncmp(buffer + i_start, "CONNEXION", cmp_length) == 0)
+		return CONNEXION;
 	else if(strncmp(buffer + i_start, "SORT", cmp_length) == 0)
 		return SORT;
 	else if(strncmp(buffer + i_start, "TROUVE", cmp_length) == 0)
@@ -86,7 +86,7 @@ void* client_handler(void* sock_client) {
 		switch(comm){
 
 			case CONNEXION:
-				printf("case CONNECTION\n");
+				printf("case CONNEXION\n");
 				break;
 
 			case SORT:
