@@ -61,6 +61,11 @@ typedef struct {
 	char* mot;
 } client;
 
+typedef struct {
+	pthread_rwlock_t* rwlock;
+	int tour_act;
+} boggle_game;
+
 /*========== options ligne de commande =========*/
 
 /*ces variables ne sont affectees qu'une fois, ensuite elles seront
@@ -77,5 +82,6 @@ boolean opt_grilles;
 client* clients[MAX_CLIENTS];
 sem_t* slots_clients;
 pthread_mutex_t* check_co;
+boggle_game* game;
 
 #endif

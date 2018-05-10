@@ -51,36 +51,80 @@ void comm_bienvenue(char* buffer_in,int i_start, char* buffer_out, int slot){
 
 	pthread_rwlock_wrlock(clients[slot]->rwlock);
 	//LOCK ECRITURE (et lecture)
+
 	if(clients[slot]->is_ready == TRUE){
 		printf("erreur: CONNEXION/ deja recu pour ce client.\n");
 		pthread_rwlock_unlock(clients[slot]->rwlock);
-	
-	}else{
-		//on enregistre le pseudo de l'user, et on le passe en etat ready
-		clients[slot]->is_ready = TRUE;
-		memcpy(clients[slot]->user, buffer_in + i_start, i_slash);
-		
-		//UNLOCK
-		pthread_rwlock_unlock(clients[slot]->rwlock);
-
-		/*reponse BIENVENUE*/
-		strcat(buffer_out, "BIENVENUE/");
-
-		pthread_rwlock_rdlock(clients[slot]->rwlock);
-		//LOCK LECTURE
-
-		strcat(buffer_out, clients[slot]->user);
-		strcat(buffer_out, "/\n");
-
-		printf("%zd: %s\n", strlen(buffer_out), buffer_out);
-		send(clients[slot]->sock, buffer_out, strlen(buffer_out), 0);
-		//UNLOCK
-
-		pthread_rwlock_unlock(clients[slot]->rwlock);
-
-			//envoi message connecte aux autres clients
+		return;
 	}
 
+	//on enregistre le pseudo de l'user, et on le passe en etat ready
+	clients[slot]->is_ready = TRUE;
+	memcpy(clients[slot]->user, buffer_in + i_start, i_slash);
+	
+	//UNLOCK
+	pthread_rwlock_unlock(clients[slot]->rwlock);
+
+	/*reponse BIENVENUE*/
+	strcat(buffer_out, "BIENVENUE/");
+
+	pthread_rwlock_rdlock(game->rwlock);
+	//LOCK LECTURE
+
+	strcat(buffer_out, grilles[game->tour_act]);
+	strcat(buffer_out, "/");
+	char buffer_int[12];
+	snprintf(buffer_int, 12, "%d", game->tour_act);
+
+	//UNLOCK
+	pthread_rwlock_unlock(game->rwlock);
+
+	strcat(buffer_out, buffer_int);
+
+	int i;
+	for(i=0; i<MAX_CLIENTS; i++){
+		pthread_rwlock_rdlock(clients[i]->rwlock);
+		//LOCK LECTURE
+
+		if(clients[i]->is_ready == TRUE){
+			strcat(buffer_out, "*");
+			strcat(buffer_out, clients[i]->user);
+			strcat(buffer_out, "*");
+			snprintf(buffer_int, 12, "%d", clients[i]->score);
+			strcat(buffer_out, buffer_int);
+		}
+
+		//UNLOCK
+		pthread_rwlock_unlock(clients[i]->rwlock);
+
+	}
+	strcat(buffer_out, "/\n");
+
+	send(clients[slot]->sock, buffer_out, strlen(buffer_out), 0);
+	buffer_out[0] = '\0';
+
+	/*reponse CONNECTE*/
+	strcat(buffer_out, "CONNECTE/");
+
+	pthread_rwlock_rdlock(clients[slot]->rwlock);
+	//LOCK LECTURE
+
+	strcat(buffer_out, clients[slot]->user);
+
+	//UNLOCK
+	pthread_rwlock_unlock(clients[slot]->rwlock);
+	strcat(buffer_out, "/\n");
+
+	for(i=0; i<MAX_CLIENTS; i++){
+		pthread_rwlock_rdlock(clients[i]->rwlock);
+		//LOCK LECTURE
+
+		if(i != slot && clients[i]->is_ready == TRUE){
+			send(clients[i]->sock, buffer_out, strlen(buffer_out), 0);
+		}
+		//UNLOCK
+		pthread_rwlock_unlock(clients[i]->rwlock);
+	}
 	buffer_out[0]='\0';
 }
 

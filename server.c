@@ -160,10 +160,12 @@ void init_clients(){
 
 int ajout_client(int sock_client){
 	int i;
+
+	pthread_mutex_lock(check_co);
+	
 	for(i=0; i<MAX_CLIENTS; i++){
 
 		//On bloque les tentatives d'acces aux booleens is_co des clients
-		pthread_mutex_lock(check_co);
 		
 		if(clients[i]->is_co == FALSE){
 
@@ -179,27 +181,35 @@ int ajout_client(int sock_client){
 			pthread_rwlock_unlock(clients[i]->rwlock);
 			break;
 		}
-
-		pthread_mutex_unlock(check_co);
 	}
+	pthread_mutex_unlock(check_co);
+
 
 	return i;
+}
+
+void init_game(){
+	game = (boggle_game*) malloc (sizeof(boggle_game));
+
+	game->rwlock = (pthread_rwlock_t*) malloc (sizeof(pthread_rwlock_t));
+	pthread_rwlock_init(game->rwlock, NULL);
+	game->tour_act = 1;
 }
 
 void handling_clients_loop(int sock_server){
 	//settings client
 	struct sockaddr_in sin_client = { 0 };
 	size_t sin_client_size = sizeof(sin_client);
-	pthread_t thread_id = NULL;
+	pthread_t thread_id;
 
 	/*initialisation du tableau de clients et sa semaphore d'acces*/
 	init_clients();
 
+	init_game();
+
 	int a;
 	sem_getvalue(slots_clients, &a);
 	printf("CAPACITE : %d\n", a);
-	/*pthread_mutex_lock(clients[0]->mutex);
-	pthread_mutex_unlock(clients[0]->mutex);*/
 
 	//boucle d'ecoute
 	while(1){
