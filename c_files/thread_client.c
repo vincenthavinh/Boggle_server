@@ -4,8 +4,7 @@
 void* client_handler(void* slot_client) {
 	int slot = *(int*) slot_client;
 	
-	printf("\n%d: client %d connecte!",slot,  slot);
-	fflush(stdout);
+	printf("%d: client %d connecte!\n",slot,  slot);
 
 	char buffer_in[BUF_SIZE] = { 0 }; //buffer d'entree
 	int bytes_in = 0; //bytes ecrites dans le buffer_in
@@ -26,14 +25,14 @@ void* client_handler(void* slot_client) {
 
 		/*CAS CONNEXION*/
 		if(strcmp(commande, "CONNEXION") == 0){
-			printf("%d: case CONNEXION\n", slot);
+			//printf("%d: case CONNEXION\n", slot);
 			char* user = strtok_r(NULL, "/", &reste);
         	comm_connexion(slot, user);
 
 		}
 		/*CAS SORT*/
 		else if(strcmp(commande, "SORT") == 0){
-			printf("%d: case SORT\n", slot);
+			//printf("%d: case SORT\n", slot);
 			comm_sort(slot);
 			bytes_in = 0;
 			break;
@@ -41,20 +40,25 @@ void* client_handler(void* slot_client) {
 		}
 		/*CAS TROUVE*/
 		else if(strcmp(commande, "TROUVE") == 0){
-			printf("%d: case TROUVE\n", slot);
-			
+			//printf("%d: case TROUVE\n", slot);
+			game->client = slot;
+			pthread_mutex_lock(game->mutex);
+			printf("AVANT COND SIGNAL\n");
+			pthread_cond_signal(game->event);
+			pthread_mutex_unlock(game->mutex);
+			printf("APRES COND SIGNAL\n");
 
 		}
 		/*CAS ENVOI*/
 		else if(strcmp(commande, "ENVOI") == 0){
-			printf("%d: case TROUVE\n", slot);
+			//printf("%d: case TROUVE\n", slot);
 			char* message = strtok_r(NULL, "/", &reste);
 			comm_envoi(slot, message);
 
 		}
 		/*CAS PENVOI*/
 		else if(strcmp(commande, "PENVOI") == 0){
-			printf("%d: case PENVOI\n", slot);
+			//printf("%d: case PENVOI\n", slot);
 			char* user = strtok_r(NULL, "/", &reste);
 			char* message = strtok_r(NULL, "/", &reste);
 			comm_penvoi(slot, message, user);
@@ -155,6 +159,8 @@ void comm_envoi(int slot, char* message){
 	buffer_out[0] = '\0';
 	strcat(buffer_out, "RECEPTION/");
 	strcat(buffer_out, message);
+	strcat(buffer_out, "/");
+	strcat(buffer_out, clients[slot]->user);
 	strcat(buffer_out, "/\n");
 
 	int i;
@@ -164,6 +170,7 @@ void comm_envoi(int slot, char* message){
 		}
 	}
 }
+
 
 void comm_penvoi(int slot, char* message, char* user){
 	char buffer_out[BUF_SIZE] = { 0 };
@@ -179,7 +186,6 @@ void comm_penvoi(int slot, char* message, char* user){
 	int i;
 	for(i=0; i<MAX_CLIENTS; i++){
 		if(clients[i]->is_ready == TRUE){
-			printf("i: %s, user: %s\n", clients[i]->user, user);
 			if(strcmp(clients[i]->user, user) == 0)
 			send(clients[i]->sock, buffer_out, strlen(buffer_out), 0);
 		}

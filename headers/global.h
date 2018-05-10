@@ -29,30 +29,6 @@
 
 typedef enum { FALSE, TRUE } boolean;
 
-typedef enum { 
-	CONNEXION,
-	SORT,
-	TROUVE,
-	ENVOI,
-	PENVOI,
-	non_reconnu
-} comm_client;
-
-typedef enum {
-	BIENVENUE,
-	CONNECTE,
-	DECONNEXION,
-	SESSION,
-	VAINQUEUR,
-	TOUR,
-	MVALIDE,
-	MINVALIDE,
-	RFIN,
-	BILANMOTS,
-	RECEPTION,
-	PRECEPTION
-} mess_server;
-
 typedef struct {
 	boolean is_co;
 	boolean is_ready;	
