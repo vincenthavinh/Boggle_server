@@ -2,8 +2,10 @@
 #define THREAD_CLIENT_H
 
 void* client_handler(void* slot_client);
-int recv_message(int sock, char buffer[]);
-int index_of_slash(char buffer[]);
-comm_client get_command(char buffer[], int i_start, int i_end);
+
+void comm_connexion(int slot, char* user);
+void comm_sort(int slot);
+/*void comm_trouve(char* buffer_in,int i_start, char* buffer_out, int slot);
+*/
 
 #endif

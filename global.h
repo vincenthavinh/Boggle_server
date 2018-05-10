@@ -19,7 +19,8 @@
 #define MAX_CLIENTS 3
 
 #define TAILLE_USER 50
-#define TAILLE_MOT 100
+#define TAILLE_MOT 17
+#define TAILLE_TRAJ 35
 
 #define BUF_SIZE 1024
 
@@ -52,18 +53,21 @@ typedef enum {
 } mess_server;
 
 typedef struct {
-	pthread_rwlock_t* rwlock;
 	boolean is_co;
 	boolean is_ready;	
 	int sock;
 	char* user;
 	int score ;
 	char* mot;
+	char* traj;
 } client;
 
 typedef struct {
-	pthread_rwlock_t* rwlock;
 	int tour_act;
+	boolean tour_fini;
+	int client;
+	pthread_cond_t* event;
+	pthread_mutex_t* mutex;
 } boggle_game;
 
 /*========== options ligne de commande =========*/
@@ -81,7 +85,7 @@ boolean opt_grilles;
 
 client* clients[MAX_CLIENTS];
 sem_t* slots_clients;
-pthread_mutex_t* check_co;
+
 boggle_game* game;
 
 #endif

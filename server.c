@@ -1,6 +1,7 @@
 #include "global.h"
 #include "server.h"
 #include "thread_client.h"
+#include "thread_game.h"
 
 //./server -g 2 ABCDEFGHIJKLMNOP KGROJFUNTZOLKSUE -t 2 -p 2018
 
@@ -64,12 +65,6 @@ void parse_command_line(int argc, char* argv[]){
 					//on copie la chaine passee dans argv[i] dans grilles[j].
 					grilles[j] = strndup(argv[i], TAILLE_GRILLE);
 				}
-
-				/*printf("-t %d ", nb_grilles);
-				int k; 
-				for(k=0; k<nb_grilles; k++) 
-					printf("%.*s ", TAILLE_GRILLE, grilles[k]);
-				printf("\n");*/
 			}
 
 			/*OPTION IMMEDIAT*/
@@ -136,9 +131,6 @@ void init_clients(){
 	slots_clients = (sem_t*) malloc (sizeof(sem_t));
 	sem_init(slots_clients, 0, MAX_CLIENTS);
 
-	check_co = (pthread_mutex_t*) malloc (sizeof(pthread_mutex_t));
-	pthread_mutex_init(check_co, NULL);
-
 	int i;
 	for(i=0; i<MAX_CLIENTS; i++){
 		clients[i] = (client*) malloc (sizeof(client));
@@ -150,53 +142,50 @@ void init_clients(){
 
 		clients[i]->user = (char*) malloc (TAILLE_USER * sizeof(char));
 		clients[i]->mot = (char*) malloc (TAILLE_MOT * sizeof(char));
+		clients[i]->traj = (char*) malloc (TAILLE_TRAJ * sizeof(char));
 		memset(clients[i]->user, '\0', TAILLE_USER);
 		memset(clients[i]->mot, '\0', TAILLE_MOT);
-
-		clients[i]->rwlock = (pthread_rwlock_t*) malloc (sizeof(pthread_rwlock_t));
-		pthread_rwlock_init(clients[i]->rwlock, NULL);
+		memset(clients[i]->traj, '\0', TAILLE_TRAJ);
 	}
 }
 
 int ajout_client(int sock_client){
 	int i;
-
-	pthread_mutex_lock(check_co);
-	
 	for(i=0; i<MAX_CLIENTS; i++){
-
-		//On bloque les tentatives d'acces aux booleens is_co des clients
-		
 		if(clients[i]->is_co == FALSE){
-
-			pthread_rwlock_wrlock(clients[i]->rwlock);
-
 			clients[i]->sock = sock_client;
 			clients[i]->is_co = TRUE;
 			clients[i]->is_ready = FALSE;
 			clients[i]->score = 0;
 			memset(clients[i]->user, '\0', TAILLE_USER);
 			memset(clients[i]->mot, '\0', TAILLE_MOT);
-
-			pthread_rwlock_unlock(clients[i]->rwlock);
 			break;
 		}
 	}
-	pthread_mutex_unlock(check_co);
-
-
 	return i;
 }
 
 void init_game(){
 	game = (boggle_game*) malloc (sizeof(boggle_game));
-
-	game->rwlock = (pthread_rwlock_t*) malloc (sizeof(pthread_rwlock_t));
-	pthread_rwlock_init(game->rwlock, NULL);
 	game->tour_act = 1;
+	game->tour_fini = FALSE;
+	game->client = -1;
+
+	game->event = (pthread_cond_t*) malloc (sizeof(pthread_cond_t));
+	pthread_cond_init(game->event, NULL);
+
+	game->mutex = (pthread_mutex_t*) malloc (sizeof(pthread_mutex_t));
+	pthread_mutex_init(game->mutex, NULL);
 }
 
-void handling_clients_loop(int sock_server){
+int main(int argc, char* argv[]) {
+	parse_command_line(argc, argv);
+
+	print_args(); //pour l'instant ne marche qu'avec des chaines precisees en arg.
+
+	//creation socket d'ecoute du serveur.
+	int sock_server = init_socket(port);
+
 	//settings client
 	struct sockaddr_in sin_client = { 0 };
 	size_t sin_client_size = sizeof(sin_client);
@@ -207,13 +196,17 @@ void handling_clients_loop(int sock_server){
 
 	init_game();
 
-	int a;
-	sem_getvalue(slots_clients, &a);
-	printf("CAPACITE : %d\n", a);
+	//creation du pthread du jeu
+	if( pthread_create( &thread_id , NULL ,  game_handler , NULL) != 0){
+		perror("pthread_create()");
+	}
 
 	//boucle d'ecoute
 	while(1){
-		
+		int a;
+		sem_getvalue(slots_clients, &a);
+		printf("CAPACITE : %d\n\n", a);
+
 		/*si un slot client est disponible (bloquant)*/
 		sem_wait(slots_clients);
 
@@ -238,18 +231,6 @@ void handling_clients_loop(int sock_server){
 
 
 	}
-}
-
-int main(int argc, char* argv[]) {
-	
-	parse_command_line(argc, argv);
-
-	print_args(); //pour l'instant ne marche qu'avec des chaines precisees en arg.
-
-	//creation socket d'ecoute du serveur.
-	int sock_server = init_socket(port);
-
-	handling_clients_loop(sock_server);
 
 	return 0;
 }
