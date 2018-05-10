@@ -1,5 +1,10 @@
-server:	server.c thread_client.c thread_game.c thread_client.h server.h global.h thread_game.h
-	gcc -g -Wall -pthread -lpthread server.c thread_client.c thread_game.c -o server
+FLAGS = -g -Wall -pthread -lpthread
+
+C_FILES = $(wildcard c_files/*.c)
+H_FILES = $(wildcard headers/*.h)
+
+server:	$(C_FILES) $(H_FILES)
+	gcc $(FLAGS) $(C_FILES) -o server
 
 clean:
 	rm -f server

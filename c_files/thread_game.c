@@ -1,5 +1,5 @@
-#include "global.h"
-#include "thread_game.h"
+#include "../headers/global.h"
+#include "../headers/thread_game.h"
 
 void* game_handler(){
 

@@ -1,7 +1,7 @@
-#include "global.h"
-#include "server.h"
-#include "thread_client.h"
-#include "thread_game.h"
+#include "../headers/global.h"
+#include "../headers/server.h"
+#include "../headers/thread_client.h"
+#include "../headers/thread_game.h"
 
 //./server -g 2 ABCDEFGHIJKLMNOP KGROJFUNTZOLKSUE -t 2 -p 2018
 

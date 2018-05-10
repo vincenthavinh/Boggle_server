@@ -1,10 +1,11 @@
-#include "global.h"
-#include "thread_client.h"
+#include "../headers/global.h"
+#include "../headers/thread_client.h"
 
 void* client_handler(void* slot_client) {
 	int slot = *(int*) slot_client;
 	
-	printf("\n%d: client %d connecte!\n",slot,  slot);
+	printf("\n%d: client %d connecte!",slot,  slot);
+	fflush(stdout);
 
 	char buffer_in[BUF_SIZE] = { 0 }; //buffer d'entree
 	int bytes_in = 0; //bytes ecrites dans le buffer_in
@@ -16,39 +17,55 @@ void* client_handler(void* slot_client) {
 		if (bytes_in <=0) break;
 
 		/*affichage du message*/
-		printf("TAILLE : %d, MSG: %s\n", bytes_in, buffer_in);
+		printf("%d: %s", slot, buffer_in);
+		fflush(stdout);
 
 		/*parsing du message*/
 		char* reste = buffer_in;
 		char* commande = strtok_r(reste, "/", &reste);
 
+		/*CAS CONNEXION*/
 		if(strcmp(commande, "CONNEXION") == 0){
-			printf("case CONNEXION\n");
-			/*while ((token = strtok_r(reste, "/", &reste)))
-        	printf("TOKEN: %s\n", token);*/
+			printf("%d: case CONNEXION\n", slot);
 			char* user = strtok_r(NULL, "/", &reste);
         	comm_connexion(slot, user);
 
 		}
+		/*CAS SORT*/
 		else if(strcmp(commande, "SORT") == 0){
-			printf("case SORT\n");
+			printf("%d: case SORT\n", slot);
 			comm_sort(slot);
+			bytes_in = 0;
+			break;
 
 		}
+		/*CAS TROUVE*/
 		else if(strcmp(commande, "TROUVE") == 0){
-			printf("case TROUVE\n");
+			printf("%d: case TROUVE\n", slot);
+			
 
 		}
+		/*CAS ENVOI*/
 		else if(strcmp(commande, "ENVOI") == 0){
-			printf("case TROUVE\n");
+			printf("%d: case TROUVE\n", slot);
+			char* message = strtok_r(NULL, "/", &reste);
+			comm_envoi(slot, message);
 
 		}
+		/*CAS PENVOI*/
 		else if(strcmp(commande, "PENVOI") == 0){
-			printf("case PENVOI\n");
+			printf("%d: case PENVOI\n", slot);
+			char* user = strtok_r(NULL, "/", &reste);
+			char* message = strtok_r(NULL, "/", &reste);
+			comm_penvoi(slot, message, user);
 
-		}else{
-			printf("probleme COMMANDE non reconnue: %s\n", commande);
 		}
+		/*COMMANDE NON TROUVEE*/
+		else{
+			printf("%d: probleme COMMANDE non reconnue: %s\n", slot, commande);
+		}
+
+		memset(buffer_in, '\0', BUF_SIZE);
 	}
 
 	if (bytes_in == -1) {
@@ -57,7 +74,8 @@ void* client_handler(void* slot_client) {
 	}
 	else if (bytes_in == 0) {
 		/*sur deconnexion propre du client:*/
-		printf("CO FINIE recv: %d\n", bytes_in);
+		printf("CO FINIE client %d, close socket %d\n", slot, clients[slot]->sock);
+		close(clients[slot]->sock);
 
 		/*on passe le client en deconnecte*/
 		clients[slot]->is_co = FALSE;
@@ -72,7 +90,7 @@ void* client_handler(void* slot_client) {
 
 void comm_connexion(int slot, char* user){
 	if(clients[slot]->is_ready == TRUE){
-		printf("erreur: CONNEXION/ deja recu pour ce client.\n");
+		printf("%d: erreur, CONNEXION/ deja recu pour ce client.\n", slot);
 		return;
 	}
 
@@ -128,6 +146,42 @@ void comm_sort(int slot){
 			send(clients[i]->sock, buffer_out, strlen(buffer_out), 0);
 		}
 	}
+}
 
-	buffer_out[0]='\0';
+void comm_envoi(int slot, char* message){
+	char buffer_out[BUF_SIZE] = { 0 };
+
+	//message RECEPTION
+	buffer_out[0] = '\0';
+	strcat(buffer_out, "RECEPTION/");
+	strcat(buffer_out, message);
+	strcat(buffer_out, "/\n");
+
+	int i;
+	for(i=0; i<MAX_CLIENTS; i++){
+		if(clients[i]->is_ready == TRUE){
+			send(clients[i]->sock, buffer_out, strlen(buffer_out), 0);
+		}
+	}
+}
+
+void comm_penvoi(int slot, char* message, char* user){
+	char buffer_out[BUF_SIZE] = { 0 };
+
+	//message PRECEPTION
+	buffer_out[0] = '\0';
+	strcat(buffer_out, "PRECEPTION/");
+	strcat(buffer_out, message);
+	strcat(buffer_out, "/");
+	strcat(buffer_out, clients[slot]->user);
+	strcat(buffer_out, "/\n");
+
+	int i;
+	for(i=0; i<MAX_CLIENTS; i++){
+		if(clients[i]->is_ready == TRUE){
+			printf("i: %s, user: %s\n", clients[i]->user, user);
+			if(strcmp(clients[i]->user, user) == 0)
+			send(clients[i]->sock, buffer_out, strlen(buffer_out), 0);
+		}
+	}
 }
