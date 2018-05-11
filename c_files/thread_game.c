@@ -147,12 +147,15 @@ boolean est_valide(char* mot, char* traj, char* raison){
     else{
 
         //boucle de verification de la trajectoire
+        int x, y, x_prec, y_prec;
+
         int i;
         for(i=0; i<strlen(mot); i++){
-            //printf("char: %c, traj: %c%c,\n", mot[i], traj[i*2], traj[i*2+1]);
-            int x = traj[i*2+1] - '1';
-            int y = traj[i*2] - 'A';
+
+            x = traj[i*2+1] - '1';
+            y = traj[i*2] - 'A';
             int index = COTE_GRILLE * y + x;
+
             if( !(0<=x && x<COTE_GRILLE) || !(0<=y && y<COTE_GRILLE) ){
                 sprintf(raison, "POS outofbounds :%c%c",traj[i*2], traj[i*2+1]);
                 break;
@@ -162,6 +165,17 @@ boolean est_valide(char* mot, char* traj, char* raison){
                     game->grille_act[index], traj[i*2], traj[i*2+1]);
                 break;
             }
+
+            if(i > 0){
+               if((x != x_prec+1 && x != x_prec-1) || (y != y_prec+1 && y != y_prec-1)){
+                sprintf(raison, "POS %c%c et %c%c non adjacents",
+                    traj[(i-1)*2], traj[(i-1)*2+1], traj[i*2], traj[i*2+1]);
+                break;
+               }
+            }
+
+            x_prec = x;
+            y_prec = y;
 
             if(i == strlen(mot)-1) traj_valide = TRUE;
         }
