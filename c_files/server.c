@@ -1,9 +1,6 @@
 #include "../headers/global.h"
-#include "../headers/server.h"
-#include "../headers/thread_client.h"
-#include "../headers/thread_game.h"
 
-//./server -g 2 ABCDEFGHIJKLMNOP KGROJFUNTZOLKSUE -t 2 -p 2018
+//./server -g 3 LIDAREJULTNEATNG KGROJFUNTZOLKSUE ABCDEFGHIJKLMNOP -t 5 -p 2018
 
 
 int main(int argc, char* argv[]) {
@@ -80,10 +77,10 @@ void init_clients(){
 		clients[i]->score = 0;
 
 		clients[i]->user = (char*) malloc (TAILLE_USER * sizeof(char));
-		clients[i]->mot = (char*) malloc (TAILLE_MOT * sizeof(char));
+		clients[i]->mot = (char*) malloc (TAILLE_GRILLE * sizeof(char));
 		clients[i]->traj = (char*) malloc (TAILLE_TRAJ * sizeof(char));
 		memset(clients[i]->user, '\0', TAILLE_USER);
-		memset(clients[i]->mot, '\0', TAILLE_MOT);
+		memset(clients[i]->mot, '\0', TAILLE_GRILLE);
 		memset(clients[i]->traj, '\0', TAILLE_TRAJ);
 	}
 }
@@ -97,7 +94,7 @@ int ajout_client(int sock_client){
 			clients[i]->is_ready = FALSE;
 			clients[i]->score = 0;
 			memset(clients[i]->user, '\0', TAILLE_USER);
-			memset(clients[i]->mot, '\0', TAILLE_MOT);
+			memset(clients[i]->mot, '\0', TAILLE_GRILLE);
 			break;
 		}
 	}
@@ -106,9 +103,13 @@ int ajout_client(int sock_client){
 
 void init_game(){
 	game = (boggle_game*) malloc (sizeof(boggle_game));
-	game->tour_act = 1;
+	game->tour_act = 0;
 	game->tour_fini = TRUE;
 	game->client = -1;
+
+	if(opt_grilles == FALSE){
+		game->grille_act = (char*) malloc (TAILLE_GRILLE * sizeof(char));
+	}
 
 	game->event = (pthread_cond_t*) malloc (sizeof(pthread_cond_t));
 	pthread_cond_init(game->event, NULL);

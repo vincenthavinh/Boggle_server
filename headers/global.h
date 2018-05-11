@@ -14,16 +14,23 @@
 #include <sys/socket.h>
 #include <netinet/in.h>
 
+#include "../headers/server.h"
+#include "../headers/thread_client.h"
+#include "../headers/thread_game.h"
+
+
 /*========== macros (constantes) ==========*/
 
-#define TAILLE_GRILLE 16
+#define TAILLE_GRILLE 17
 #define MAX_CLIENTS 3
 
 #define TAILLE_USER 50
-#define TAILLE_MOT 17
 #define TAILLE_TRAJ 35
 
 #define BUF_SIZE 1024
+
+#define TEMPS_TOUR 7
+#define TEMPS_PAUSE 10
 
 /*========== Definitions de Structures ==========*/
 
@@ -41,28 +48,32 @@ typedef struct {
 
 typedef struct {
 	int tour_act;
+	char* grille_act;
 	boolean tour_fini;
 	int client;
 	pthread_cond_t* event;
 	pthread_mutex_t* mutex;
 } boggle_game;
 
+/*========== Var Globales Partagees ==========*/
+
+client* clients[MAX_CLIENTS];
+sem_t* slots_clients;
+
+boggle_game* game;
+
+
+
+
 /*========== options ligne de commande =========*/
 
 /*ces variables ne sont affectees qu'une fois, ensuite elles seront
- *seulement accedees en lecture*/
+ *seulement accedees en lecture: pas de probleme de concurrence*/
 int port;
 int nb_grilles;
 int nb_tours;
 char** grilles;
 boolean immediat;
 boolean opt_grilles;
-
-/*========== autres ==========*/
-
-client* clients[MAX_CLIENTS];
-sem_t* slots_clients;
-
-boggle_game* game;
 
 #endif

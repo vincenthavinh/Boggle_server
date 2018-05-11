@@ -1,5 +1,4 @@
 #include "../headers/global.h"
-#include "../headers/thread_client.h"
 
 void* client_handler(void* slot_client) {
 	int slot = *(int*) slot_client;
@@ -41,13 +40,9 @@ void* client_handler(void* slot_client) {
 		/*CAS TROUVE*/
 		else if(strcmp(commande, "TROUVE") == 0){
 			//printf("%d: case TROUVE\n", slot);
-			game->client = slot;
-			pthread_mutex_lock(game->mutex);
-			printf("AVANT COND SIGNAL\n");
-			pthread_cond_signal(game->event);
-			pthread_mutex_unlock(game->mutex);
-			printf("APRES COND SIGNAL\n");
-
+			char* mot = strtok_r(NULL, "/", &reste);
+			char* traj = strtok_r(NULL, "/", &reste);
+			comm_trouve(slot, mot, traj);
 		}
 		/*CAS ENVOI*/
 		else if(strcmp(commande, "ENVOI") == 0){
@@ -106,7 +101,7 @@ void comm_connexion(int slot, char* user){
 
 	//message BIENVENUE
 	strcat(buffer_out, "BIENVENUE/");
-	strcat(buffer_out, grilles[game->tour_act]);
+	strcat(buffer_out, game->grille_act);
 	strcat(buffer_out, "/");
 	sprintf(buffer_out+strlen(buffer_out), "%d", game->tour_act);
 
@@ -139,7 +134,6 @@ void comm_sort(int slot){
 	char buffer_out[BUF_SIZE] = { 0 };
 
 	//message DECONNEXION
-	buffer_out[0] = '\0';
 	strcat(buffer_out, "DECONNEXION/");
 	strcat(buffer_out, clients[slot]->user);
 	strcat(buffer_out, "/\n");
@@ -150,6 +144,17 @@ void comm_sort(int slot){
 			send(clients[i]->sock, buffer_out, strlen(buffer_out), 0);
 		}
 	}
+}
+
+void comm_trouve(int slot, char* mot, char* traj){
+
+	strcpy(clients[slot]->mot, mot);
+	strcpy(clients[slot]->traj, traj);
+	game->client = slot;
+
+	pthread_mutex_lock(game->mutex);
+	pthread_cond_signal(game->event);
+	pthread_mutex_unlock(game->mutex);
 }
 
 void comm_envoi(int slot, char* message){
@@ -170,7 +175,6 @@ void comm_envoi(int slot, char* message){
 		}
 	}
 }
-
 
 void comm_penvoi(int slot, char* message, char* user){
 	char buffer_out[BUF_SIZE] = { 0 };
