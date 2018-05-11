@@ -42,14 +42,11 @@ typedef struct {
 	int sock;
 	char* user;
 	int score ;
-	char* mot;
-	char* traj;
 } client;
 
 typedef struct {
 	int tour_act;
 	char* grille_act;
-	boolean tour_fini;
 	int client;
 	pthread_cond_t* event;
 	pthread_mutex_t* mutex;

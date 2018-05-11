@@ -148,13 +148,13 @@ void comm_sort(int slot){
 
 void comm_trouve(int slot, char* mot, char* traj){
 
-	strcpy(clients[slot]->mot, mot);
+	/*strcpy(clients[slot]->mot, mot);
 	strcpy(clients[slot]->traj, traj);
 	game->client = slot;
 
 	pthread_mutex_lock(game->mutex);
 	pthread_cond_signal(game->event);
-	pthread_mutex_unlock(game->mutex);
+	pthread_mutex_unlock(game->mutex);*/
 }
 
 void comm_envoi(int slot, char* message){

@@ -5,6 +5,7 @@ void* game_handler(){
     while(1){
 
         printf("debut SESSION\n");
+        game->tour_act = 0;
 
         //message SESSION
         msg_session();
@@ -106,8 +107,6 @@ void msg_rfin(){
 void* timer_tour(){
 
     sleep(TEMPS_TOUR);
-
-    game->tour_fini = TRUE;
 
     pthread_mutex_lock(game->mutex);
     pthread_cond_signal(game->event);
