@@ -167,9 +167,11 @@ boolean est_valide(char* mot, char* traj, char* raison){
             }
 
             if(i > 0){
-               if((x != x_prec+1 && x != x_prec-1) || (y != y_prec+1 && y != y_prec-1)){
+               if( (!(x_prec-1 <= x && x <= x_prec+1)) || 
+                (!(y_prec-1 <= y && y <= y_prec+1)) ){
                 sprintf(raison, "POS %c%c et %c%c non adjacents",
                     traj[(i-1)*2], traj[(i-1)*2+1], traj[i*2], traj[i*2+1]);
+                printf("x:%d, x_pre:%d, y:%d, y_pre:%d\n", x, x_prec, y, y_prec);
                 break;
                }
             }
