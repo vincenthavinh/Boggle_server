@@ -90,7 +90,6 @@ void calcul_scores(){
             propos* temp = clients[i]->list_prop;
             while(temp != NULL){
                 if(temp->valide){
-                    printf("taille: %zd, ", strlen(temp->mot));
                     if(strlen(temp->mot) == 3) clients[i]->score += 1;
                     else if(strlen(temp->mot) == 4) clients[i]->score += 1;
                     else if(strlen(temp->mot) == 5) clients[i]->score += 2;
