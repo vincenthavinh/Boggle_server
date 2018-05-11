@@ -71,10 +71,6 @@ void init_clients(){
 
 		clients[i]->user = (char*) malloc (TAILLE_USER * sizeof(char));
 		memset(clients[i]->user, '\0', TAILLE_USER);
-		/*clients[i]->mot = (char*) malloc (TAILLE_GRILLE * sizeof(char));
-		memset(clients[i]->mot, '\0', TAILLE_GRILLE);
-		clients[i]->traj = (char*) malloc (TAILLE_TRAJ * sizeof(char));
-		memset(clients[i]->traj, '\0', TAILLE_TRAJ);*/
 	}
 }
 
@@ -87,8 +83,6 @@ int ajout_client(int sock_client){
 			clients[i]->is_ready = FALSE;
 			clients[i]->score = 0;
 			memset(clients[i]->user, '\0', TAILLE_USER);
-			/*memset(clients[i]->mot, '\0', TAILLE_GRILLE);
-			memset(clients[i]->traj, '\0', TAILLE_TRAJ);*/
 			break;
 		}
 	}

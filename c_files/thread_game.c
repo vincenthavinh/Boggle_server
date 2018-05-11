@@ -43,10 +43,18 @@ void* game_handler(){
             msg_rfin();
 
             //calcul et attribution des scores du tour
-
+            calcul_scores();
 
             //msg BILANMOTS
             msg_bilanmots();
+
+            //remise a zero des motsproposes pour chaque client
+            int i;
+            for(i=0; i<MAX_CLIENTS; i++){
+                if(clients[i]->is_ready == TRUE){
+                    supp_all_props(&(clients[i]->list_prop));
+                }
+            }
 
             //pause resultats entre 2 tours
             sleep(TEMPS_PAUSE);
@@ -57,11 +65,44 @@ void* game_handler(){
         }
 
         printf("fin SESSION\n");
+
+        //msg VAINQUEUR
         msg_vainqueur();
+
         sleep(TEMPS_PAUSE);
+
+        //remise a zero des scores
+        int i;
+        for(i=0; i<MAX_CLIENTS; i++)
+            if(clients[i]->is_ready == TRUE)
+                clients[i]->score = 0;
     }
 
     return NULL;
+}
+
+void calcul_scores(){
+    int i;
+    for(i=0; i<MAX_CLIENTS; i++){
+        if(clients[i]->is_ready == TRUE){
+            
+            //boucle sur tous les mots proposes du client, ajout de points si valide.
+            propos* temp = clients[i]->list_prop;
+            while(temp != NULL){
+                if(temp->valide){
+                    printf("taille: %zd, ", strlen(temp->mot));
+                    if(strlen(temp->mot) == 3) clients[i]->score += 1;
+                    else if(strlen(temp->mot) == 4) clients[i]->score += 1;
+                    else if(strlen(temp->mot) == 5) clients[i]->score += 2;
+                    else if(strlen(temp->mot) == 6) clients[i]->score += 3;
+                    else if(strlen(temp->mot) == 7) clients[i]->score += 5;
+                    else if(strlen(temp->mot) >= 8) clients[i]->score += 11;
+                    else printf("ERREUR SCORE [%s] taille < 3 ?\n", temp->mot);
+                }
+                temp = temp->next;
+            }
+        }
+    }
 }
 
 void msg_session(){
@@ -109,10 +150,9 @@ void msg_rfin(){
 }
 
 void msg_bilanmots(){
-    char buffer_out[BUF_SIZE] = { 0 };
+    //construction chaine scores
     char scores[BUF_SIZE] = { 0 };
 
-    //construction chaine scores
     sprintf(scores+strlen(scores), "%d", game->tour_act);
     int i;
     for(i=0; i<MAX_CLIENTS; i++){
@@ -125,6 +165,8 @@ void msg_bilanmots(){
     }
 
     //message BILANMOTS
+    char buffer_out[BUF_SIZE] = { 0 };
+
     for(i=0; i<MAX_CLIENTS; i++){
         if(clients[i]->is_ready == TRUE){
             strcat(buffer_out, "BILANMOTS/");
@@ -138,32 +180,47 @@ void msg_bilanmots(){
                 }
                 temp = temp->next;
             }
-            
+            buffer_out[strlen(buffer_out)] = '\0';
+
             //ajout chaine scores/
             strcat(buffer_out, "/");
             strcat(buffer_out, scores);
             strcat(buffer_out, "/\n");
 
             send(clients[i]->sock, buffer_out, strlen(buffer_out), 0);
+            buffer_out[0] = '\0';
         }
     }
-
 }
 
 void msg_vainqueur(){
-    char buffer_out[BUF_SIZE] = { 0 };
+    //construction chaine scores
+    char scores[BUF_SIZE] = { 0 };
+
+    sprintf(scores+strlen(scores), "%d", game->tour_act);
+    int i;
+    for(i=0; i<MAX_CLIENTS; i++){
+        if(clients[i]->is_ready == TRUE){
+            strcat(scores, "*");
+            strcat(scores, clients[i]->user);
+            strcat(scores, "*");
+            snprintf(scores+strlen(scores), 12, "%d", clients[i]->score);
+        }
+    }
 
     //message RFIN
-    strcat(buffer_out, "VAINQUEUR/bilan/\n");
+    char buffer_out[BUF_SIZE] = { 0 };
 
-    int i;
+    strcat(buffer_out, "VAINQUEUR/");
+    strcat(buffer_out, scores);
+    strcat(buffer_out, "/\n");
+
     for(i=0; i<MAX_CLIENTS; i++){
         if(clients[i]->is_ready == TRUE){
             send(clients[i]->sock, buffer_out, strlen(buffer_out), 0);
         }
     }
 }
-
 
 boolean est_valide(char* mot, char* traj, char* raison){
     boolean traj_valide = FALSE;

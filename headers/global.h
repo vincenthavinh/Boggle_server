@@ -26,7 +26,7 @@
 
 #define BUF_SIZE 1024
 
-#define TEMPS_TOUR 180
+#define TEMPS_TOUR 100
 #define TEMPS_PAUSE 10
 
 /*========== Definitions de Structures ==========*/
@@ -45,7 +45,7 @@ typedef struct {
 	boolean is_ready;	
 	int sock;
 	char* user;
-	int score ;
+	int score;
 	propos* list_prop;
 } client;
 
