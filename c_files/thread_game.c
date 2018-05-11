@@ -42,6 +42,9 @@ void* game_handler(){
             //message RFIN
             msg_rfin();
 
+            //calcul et attribution des scores du tour
+
+
             //msg BILANMOTS
             msg_bilanmots();
 
@@ -107,16 +110,44 @@ void msg_rfin(){
 
 void msg_bilanmots(){
     char buffer_out[BUF_SIZE] = { 0 };
+    char scores[BUF_SIZE] = { 0 };
 
-    //message RFIN
-    strcat(buffer_out, "BILANMOTS/motsproposes/scores/\n");
-
+    //construction chaine scores
+    sprintf(scores+strlen(scores), "%d", game->tour_act);
     int i;
     for(i=0; i<MAX_CLIENTS; i++){
         if(clients[i]->is_ready == TRUE){
+            strcat(scores, "*");
+            strcat(scores, clients[i]->user);
+            strcat(scores, "*");
+            snprintf(scores+strlen(scores), 12, "%d", clients[i]->score);
+        }
+    }
+
+    //message BILANMOTS
+    for(i=0; i<MAX_CLIENTS; i++){
+        if(clients[i]->is_ready == TRUE){
+            strcat(buffer_out, "BILANMOTS/");
+
+            //ajout chaine motsproposes
+            propos* temp = clients[i]->list_prop;
+            while(temp != NULL){
+                if(temp->valide){
+                    strcat(buffer_out, temp->mot);
+                    strcat(buffer_out, "*");
+                }
+                temp = temp->next;
+            }
+            
+            //ajout chaine scores/
+            strcat(buffer_out, "/");
+            strcat(buffer_out, scores);
+            strcat(buffer_out, "/\n");
+
             send(clients[i]->sock, buffer_out, strlen(buffer_out), 0);
         }
     }
+
 }
 
 void msg_vainqueur(){
@@ -171,7 +202,6 @@ boolean est_valide(char* mot, char* traj, char* raison){
                 (!(y_prec-1 <= y && y <= y_prec+1)) ){
                 sprintf(raison, "POS %c%c et %c%c non adjacents",
                     traj[(i-1)*2], traj[(i-1)*2+1], traj[i*2], traj[i*2+1]);
-                printf("x:%d, x_pre:%d, y:%d, y_pre:%d\n", x, x_prec, y, y_prec);
                 break;
                }
             }
@@ -205,12 +235,28 @@ boolean est_valide(char* mot, char* traj, char* raison){
     return (traj_valide && mot_valide);
 }
 
-/*void ajout_prop(propos* prop, char* mot, boolean valide){
-    propos* nouv = (propos*) malloc (sizeof(struct propos_struct));
+void ajout_prop(propos** ptr_list_prop, char* mot, boolean valide){
+    propos* nouv = (propos*) malloc (sizeof(propos));
     nouv->valide = valide;
     nouv->mot = strndup(mot, TAILLE_GRILLE);
-    nouv->next = prop;
-}*/
+    nouv->next = *ptr_list_prop;
+
+    *ptr_list_prop = nouv;
+}
+
+void supp_all_props(propos* * ptr_list_prop){
+    propos* act = *ptr_list_prop;
+
+    while(act != NULL){
+        propos* suiv = act->next;
+        free(act->mot);
+        act->mot = NULL;
+        free(act);
+        act = suiv;
+    }
+
+    *ptr_list_prop = NULL;
+}
 
 void* timer_tour(){
 

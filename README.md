@@ -1,7 +1,7 @@
 # Boogle_server
 
 commande de test du serveur:
-./server -g 3 LIDAREJULTNEATNG KGROJFUNTZOLKSUE ABCDEFGHIJKLMNOP -t 5 -p 2018
+./server -g 1 LIDAREJULTNEATNG -t 5 -p 2018
 
 test mot pdt 1er tour:
 TROUVE/TRIGE/C2B1A2D4B2/

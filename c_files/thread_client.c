@@ -67,14 +67,13 @@ void* client_handler(void* slot_client) {
 		memset(buffer_in, '\0', BUF_SIZE);
 	}
 
-	if (bytes_in == -1) {
-		printf("ERREUR recv: %d\n", bytes_in);
-		perror("recv");
-	}
-	else if (bytes_in == 0) {
+	if(bytes_in == 0) {
 		/*sur deconnexion propre du client:*/
 		printf("CO FINIE client %d, close socket %d\n", slot, clients[slot]->sock);
 		close(clients[slot]->sock);
+
+		/*on supprime sa liste de propositions (desallocation)*/
+		supp_all_props(&(clients[slot]->list_prop));
 
 		/*on passe le client en deconnecte*/
 		clients[slot]->is_co = FALSE;
@@ -153,23 +152,19 @@ void comm_trouve(int slot, char* mot, char* traj){
 
 	char buffer_out[BUF_SIZE] = { 0 };
 
-	//traitement mot valide
+	//on stocke la proposition dans la liste des propositions du client.
+	ajout_prop(&(clients[slot]->list_prop) , mot, prop_valide);
+
+	//envoi du message conditionnel
 	if(prop_valide){
-
-		//ajout_prop(clients[slot]->prop , mot, prop_valide);
-
 		//message MVALIDE
-		printf("MVALIDE/%s/\n", mot);
 		strcat(buffer_out, "MVALIDE/");
 		strcat(buffer_out, mot);
 		strcat(buffer_out, "/\n");
 		send(clients[slot]->sock, buffer_out, strlen(buffer_out), 0);
 	}
-	//traiement mmot invalide
 	else{
-
 		//message MINVALIDE
-		printf("MINVALIDE/%s/\n", raison);
 		strcat(buffer_out, "MINVALIDE/");
 		strcat(buffer_out, raison);
 		strcat(buffer_out, "/\n");
