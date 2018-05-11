@@ -8,6 +8,9 @@ void msg_session();
 void msg_tour();
 void msg_rfin();
 void msg_bilanmots();
-void msg_vainqueur();;
+void msg_vainqueur();
+
+boolean est_valide(char* mot, char* traj, char* raison);
+//void ajout_prop(propos* prop, char* mot, boolean valide);
 
 #endif

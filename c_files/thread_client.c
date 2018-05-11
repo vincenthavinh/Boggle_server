@@ -7,7 +7,6 @@ void* client_handler(void* slot_client) {
 
 	char buffer_in[BUF_SIZE] = { 0 }; //buffer d'entree
 	int bytes_in = 0; //bytes ecrites dans le buffer_in
-	FILE* dico = fopen(DICO_FILENAME, "r"); //acces au dico pour verifier les mots.
 
 	while (1)
 	{
@@ -43,7 +42,7 @@ void* client_handler(void* slot_client) {
 			//printf("%d: case TROUVE\n", slot);
 			char* mot = strtok_r(NULL, "/", &reste);
 			char* traj = strtok_r(NULL, "/", &reste);
-			//comm_trouve(slot, mot, traj, dico);
+			comm_trouve(slot, mot, traj);
 		}
 		/*CAS ENVOI*/
 		else if(strcmp(commande, "ENVOI") == 0){
@@ -147,51 +146,34 @@ void comm_sort(int slot){
 	}
 }
 
-void comm_trouve(int slot, char* mot, char* traj, FILE* dico){
-	char ligne[17] = { 0 };
+void comm_trouve(int slot, char* mot, char* traj){
+	char raison[60] = { 0 };
 
-	//boucle de verification de la trajectoire
-	boolean traj_valide = FALSE;
-	boolean mot_valide = FALSE;
+	boolean prop_valide = est_valide(mot, traj, raison);
 
-	//check bonne taille trajectoire/mot
-	if(strlen(traj) != 2*strlen(mot)){
-		printf("POS taille traj\n");
-		return;
+	char buffer_out[BUF_SIZE] = { 0 };
+
+	//traitement mot valide
+	if(prop_valide){
+
+		//ajout_prop(clients[slot]->prop , mot, prop_valide);
+
+		//message MVALIDE
+		printf("MVALIDE/%s/\n", mot);
+		strcat(buffer_out, "MVALIDE/");
+		strcat(buffer_out, mot);
+		strcat(buffer_out, "/\n");
+		send(clients[slot]->sock, buffer_out, strlen(buffer_out), 0);
 	}
+	//traiement mmot invalide
 	else{
 
-		//boucle de verification de la trajectoire
-		int i;
-		for(i=0; i<strlen(mot); i++){
-			//printf("char: %c, traj: %c%c,\n", mot[i], traj[i*2], traj[i*2+1]);
-			int x = traj[i*2+1] - '1';
-			int y = traj[i*2] - 'A';
-			int index = COTE_GRILLE * y + x;
-			if( !(0<=x && x<COTE_GRILLE) || !(0<=y && y<COTE_GRILLE) ){
-				printf("POS outofbounds :%c%c, ",traj[i*2], traj[i*2+1]);
-				printf("index: %d, x: %d, y: %d\n", index, x, y);
-				return;
-			}
-			if( mot[index] != game->grille_act[index]){
-				printf("POS %c%c: %c != %c\n", traj[i*2], 
-					traj[i*2+1], mot[index], game->grille_act[index] );
-			}
-		}
-
-		//TROUVE/TRIDENT/C2B1A2A3B2C1D2/
-		//TROUVE/TRIDENTDZZD/C2B1A2A3B2C3D2/
-		//TROUVE/TRIDENT/C2B1A2A3B2CZDOZJF3D2/
-
-		//boucle de verification du mot dans le dico
-		rewind(dico);
-		while (!feof(dico) && mot_valide==FALSE){
-			fgets(ligne, TAILLE_GRILLE-1, dico);
-			char* newline = strchr(ligne, '\n');
-			if (newline != NULL) *newline = '\0';
-
-			if(strcmp(mot, ligne) == 0)	mot_valide = TRUE;
-		}
+		//message MINVALIDE
+		printf("MINVALIDE/%s/\n", raison);
+		strcat(buffer_out, "MINVALIDE/");
+		strcat(buffer_out, raison);
+		strcat(buffer_out, "/\n");
+		send(clients[slot]->sock, buffer_out, strlen(buffer_out), 0);
 	}
 }
 

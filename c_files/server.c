@@ -1,8 +1,5 @@
 #include "../headers/global.h"
 
-//./server -g 3 LIDAREJULTNEATNG KGROJFUNTZOLKSUE ABCDEFGHIJKLMNOP -t 5 -p 2018
-
-
 int main(int argc, char* argv[]) {
 	parse_command_line(argc, argv);
 
@@ -41,8 +38,6 @@ int main(int argc, char* argv[]) {
 			perror("accept() returned -1");
 			continue;
 		}
-
-		pthread_cond_signal(game->event);
 
 		//stockage et reinitialisation du client dans le tableau de clients* */
 		int num_client = ajout_client(sock_client);

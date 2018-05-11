@@ -134,6 +134,68 @@ void msg_vainqueur(){
 }
 
 
+boolean est_valide(char* mot, char* traj, char* raison){
+    boolean traj_valide = FALSE;
+    boolean mot_valide = FALSE;
+
+    //verification taille trajectoire/mot
+    if(strlen(traj) != 2*strlen(mot)){
+        sprintf(raison, "POS taille traj != 2* taille mot");
+    }
+
+    //verification trajectoire et mot
+    else{
+
+        //boucle de verification de la trajectoire
+        int i;
+        for(i=0; i<strlen(mot); i++){
+            //printf("char: %c, traj: %c%c,\n", mot[i], traj[i*2], traj[i*2+1]);
+            int x = traj[i*2+1] - '1';
+            int y = traj[i*2] - 'A';
+            int index = COTE_GRILLE * y + x;
+            if( !(0<=x && x<COTE_GRILLE) || !(0<=y && y<COTE_GRILLE) ){
+                sprintf(raison, "POS outofbounds :%c%c",traj[i*2], traj[i*2+1]);
+                break;
+            }
+            if(mot[i] != game->grille_act[index]){
+                sprintf(raison, "POS mot[%d]: %c != %c : traj[%c%c]", i, mot[i], 
+                    game->grille_act[index], traj[i*2], traj[i*2+1]);
+                break;
+            }
+
+            if(i == strlen(mot)-1) traj_valide = TRUE;
+        }
+
+        //si trajectoire bonne, on verifie le dictionnaire
+        if(traj_valide == TRUE){
+
+            //boucle de verification du mot dans le dico
+            char ligne[17] = { 0 };
+            FILE* dico = fopen(DICO_FILENAME, "r");
+            while (!feof(dico) && mot_valide==FALSE){
+                fgets(ligne, TAILLE_GRILLE-1, dico);
+                char* newline = strchr(ligne, '\n');
+                if (newline != NULL) *newline = '\0';
+
+                if(strcmp(mot, ligne) == 0) {
+                    mot_valide = TRUE;
+                    break;
+                }
+            }
+            sprintf(raison, "DIC mot non trouve dans le dictionnaire");
+        }
+    }
+
+    return (traj_valide && mot_valide);
+}
+
+/*void ajout_prop(propos* prop, char* mot, boolean valide){
+    propos* nouv = (propos*) malloc (sizeof(struct propos_struct));
+    nouv->valide = valide;
+    nouv->mot = strndup(mot, TAILLE_GRILLE);
+    nouv->next = prop;
+}*/
+
 void* timer_tour(){
 
     sleep(TEMPS_TOUR);

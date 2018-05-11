@@ -14,11 +14,6 @@
 #include <sys/socket.h>
 #include <netinet/in.h>
 
-#include "../headers/server.h"
-#include "../headers/thread_client.h"
-#include "../headers/thread_game.h"
-
-
 /*========== macros (constantes) ==========*/
 #define DICO_FILENAME "./dico.txt"
 
@@ -31,17 +26,16 @@
 
 #define BUF_SIZE 1024
 
-#define TEMPS_TOUR 7
+#define TEMPS_TOUR 120
 #define TEMPS_PAUSE 10
 
 /*========== Definitions de Structures ==========*/
 
 typedef enum { FALSE, TRUE } boolean;
 
-typedef struct prop_struct propos; 
+typedef struct propos_struct* propos; 
 struct propos_struct{
 	char* mot;
-	char* traj;
 	boolean valide;
 	propos* next;
 };
@@ -62,6 +56,13 @@ typedef struct {
 	pthread_cond_t* event;
 	pthread_mutex_t* mutex;
 } boggle_game;
+
+/*========== include headers custom ==========*/
+
+#include "../headers/server.h"
+#include "../headers/thread_client.h"
+#include "../headers/thread_game.h"
+
 
 /*========== Var Globales Partagees ==========*/
 
