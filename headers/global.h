@@ -20,12 +20,14 @@
 
 
 /*========== macros (constantes) ==========*/
+#define DICO_FILENAME "./dico.txt"
 
 #define TAILLE_GRILLE 17
+#define COTE_GRILLE 4
 #define MAX_CLIENTS 3
 
 #define TAILLE_USER 50
-#define TAILLE_TRAJ 35
+#define TAILLE_TRAJ 33
 
 #define BUF_SIZE 1024
 
@@ -36,12 +38,21 @@
 
 typedef enum { FALSE, TRUE } boolean;
 
+typedef struct prop_struct propos; 
+struct propos_struct{
+	char* mot;
+	char* traj;
+	boolean valide;
+	propos* next;
+};
+
 typedef struct {
 	boolean is_co;
 	boolean is_ready;	
 	int sock;
 	char* user;
 	int score ;
+	propos* prop;
 } client;
 
 typedef struct {

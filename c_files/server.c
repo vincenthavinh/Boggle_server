@@ -72,6 +72,7 @@ void init_clients(){
 		clients[i]->is_ready = FALSE;
 		clients[i]->sock = -1;
 		clients[i]->score = 0;
+		clients[i]->prop = NULL;
 
 		clients[i]->user = (char*) malloc (TAILLE_USER * sizeof(char));
 		memset(clients[i]->user, '\0', TAILLE_USER);

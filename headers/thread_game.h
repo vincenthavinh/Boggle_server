@@ -7,5 +7,7 @@ void* timer_tour();
 void msg_session();
 void msg_tour();
 void msg_rfin();
+void msg_bilanmots();
+void msg_vainqueur();;
 
 #endif

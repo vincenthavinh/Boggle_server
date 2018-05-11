@@ -43,7 +43,7 @@ void* game_handler(){
             msg_rfin();
 
             //msg BILANMOTS
-            printf("BILANMOTS a faire\n");
+            msg_bilanmots();
 
             //pause resultats entre 2 tours
             sleep(TEMPS_PAUSE);
@@ -53,7 +53,8 @@ void* game_handler(){
 
         }
 
-        printf("VAINQUEUR a faire\n");
+        printf("fin SESSION\n");
+        msg_vainqueur();
         sleep(TEMPS_PAUSE);
     }
 
@@ -103,6 +104,35 @@ void msg_rfin(){
         }
     }
 }
+
+void msg_bilanmots(){
+    char buffer_out[BUF_SIZE] = { 0 };
+
+    //message RFIN
+    strcat(buffer_out, "BILANMOTS/motsproposes/scores/\n");
+
+    int i;
+    for(i=0; i<MAX_CLIENTS; i++){
+        if(clients[i]->is_ready == TRUE){
+            send(clients[i]->sock, buffer_out, strlen(buffer_out), 0);
+        }
+    }
+}
+
+void msg_vainqueur(){
+    char buffer_out[BUF_SIZE] = { 0 };
+
+    //message RFIN
+    strcat(buffer_out, "VAINQUEUR/bilan/\n");
+
+    int i;
+    for(i=0; i<MAX_CLIENTS; i++){
+        if(clients[i]->is_ready == TRUE){
+            send(clients[i]->sock, buffer_out, strlen(buffer_out), 0);
+        }
+    }
+}
+
 
 void* timer_tour(){
 
