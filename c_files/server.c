@@ -219,7 +219,7 @@ void parse_command_line(int argc, char* argv[]){
 void print_args(){
 	printf("========== PARAMETRES SERVEUR ==========\n");
 	printf("port : %d\ntours : %d\nimmediat: %s\ngrilles: %s\n", 
-		port, nb_tours, (immediat?"oui":"non"), (opt_grilles?"fixes":"aleatoires"));
+		port, nb_tours, ((immediat==TRUE)?"oui":"non"), (opt_grilles?"fixes":"aleatoires"));
 	int i;
 	if(opt_grilles){
 		printf("nb_grilles: %d\n", nb_grilles);

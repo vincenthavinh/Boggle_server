@@ -144,7 +144,28 @@ void calcul_scores(){
             //boucle sur tous les mots proposes du client, ajout de points si valide.
             propos* temp = clients[i]->list_prop;
             while(temp != NULL){
-                if(temp->valide){
+
+                //si l'option -immediat n'est pas active, on zappe les mots non uniques
+                boolean est_unique = TRUE;
+                if(immediat == FALSE){
+                    printf("check uniqueeeeeeeeeeeeeeeeeeeeeeee\n");
+                    int j;
+                    for(j=0; j<MAX_CLIENTS; j++){
+                        if( (j != i) && (clients[j]->is_ready == TRUE) ) {
+                            propos* temp2 = clients[j]->list_prop;
+                            while(temp2 != NULL){
+                                if(strcmp(temp->mot, temp2->mot) == 0){
+                                    est_unique = FALSE;
+                                    break;
+                                }
+                                temp2 = temp2->next;
+                            }
+                        }
+                        if(est_unique == FALSE) break;
+                    }
+                }
+         
+                if(est_unique == TRUE){
                     if(strlen(temp->mot) == 3) clients[i]->score += 1;
                     else if(strlen(temp->mot) == 4) clients[i]->score += 1;
                     else if(strlen(temp->mot) == 5) clients[i]->score += 2;
@@ -153,6 +174,7 @@ void calcul_scores(){
                     else if(strlen(temp->mot) >= 8) clients[i]->score += 11;
                     else printf("ERREUR SCORE [%s] taille < 3 ?\n", temp->mot);
                 }
+
                 temp = temp->next;
             }
         }
@@ -228,10 +250,8 @@ void msg_bilanmots(){
             //ajout chaine motsproposes
             propos* temp = clients[i]->list_prop;
             while(temp != NULL){
-                if(temp->valide){
-                    strcat(buffer_out, temp->mot);
-                    strcat(buffer_out, "*");
-                }
+                strcat(buffer_out, temp->mot);
+                strcat(buffer_out, "*");
                 temp = temp->next;
             }
             buffer_out[strlen(buffer_out)] = '\0';
@@ -251,16 +271,18 @@ void msg_vainqueur(){
     //construction chaine scores
     char scores[BUF_SIZE] = { 0 };
 
-    sprintf(scores+strlen(scores), "%d", game->tour_act);
+    //sprintf(scores+strlen(scores), "%d", game->tour_act); car on affiche pas nb_tour
     int i;
     for(i=0; i<MAX_CLIENTS; i++){
         if(clients[i]->is_ready == TRUE){
-            strcat(scores, "*");
             strcat(scores, clients[i]->user);
             strcat(scores, "*");
             snprintf(scores+strlen(scores), 12, "%d", clients[i]->score);
+            strcat(scores, "*");
         }
     }
+     scores[strlen(scores)] = '\0';
+
 
     //message RFIN
     char buffer_out[BUF_SIZE] = { 0 };
@@ -276,79 +298,100 @@ void msg_vainqueur(){
     }
 }
 
-boolean est_valide(char* mot, char* traj, char* raison){
-    boolean traj_valide = FALSE;
-    boolean mot_valide = FALSE;
+boolean est_valide(int slot, char* mot, char* traj, char* raison){
 
     //verification taille trajectoire/mot
     if(strlen(traj) != 2*strlen(mot)){
         sprintf(raison, "POS taille traj != 2* taille mot");
+        return FALSE;
     }
 
-    //verification trajectoire et mot
-    else{
+    //boucle de verification de la trajectoire
+    int x, y, x_prec, y_prec;
+    int i;
+    for(i=0; i<strlen(mot); i++){
 
-        //boucle de verification de la trajectoire
-        int x, y, x_prec, y_prec;
+        x = traj[i*2+1] - '1';
+        y = traj[i*2] - 'A';
+        int index = COTE_GRILLE * y + x;
 
-        int i;
-        for(i=0; i<strlen(mot); i++){
-
-            x = traj[i*2+1] - '1';
-            y = traj[i*2] - 'A';
-            int index = COTE_GRILLE * y + x;
-
-            if( !(0<=x && x<COTE_GRILLE) || !(0<=y && y<COTE_GRILLE) ){
-                sprintf(raison, "POS outofbounds :%c%c",traj[i*2], traj[i*2+1]);
-                break;
-            }
-            if(mot[i] != game->grille_act[index]){
-                sprintf(raison, "POS mot[%d]: %c != %c : traj[%c%c]", i, mot[i], 
-                    game->grille_act[index], traj[i*2], traj[i*2+1]);
-                break;
-            }
-
-            if(i > 0){
-               if( (!(x_prec-1 <= x && x <= x_prec+1)) || 
-                (!(y_prec-1 <= y && y <= y_prec+1)) ){
-                sprintf(raison, "POS %c%c et %c%c non adjacents",
-                    traj[(i-1)*2], traj[(i-1)*2+1], traj[i*2], traj[i*2+1]);
-                break;
-               }
-            }
-
-            x_prec = x;
-            y_prec = y;
-
-            if(i == strlen(mot)-1) traj_valide = TRUE;
+        if( !(0<=x && x<COTE_GRILLE) || !(0<=y && y<COTE_GRILLE) ){
+            sprintf(raison, "POS outofbounds :%c%c",traj[i*2], traj[i*2+1]);
+            return FALSE;
+        }
+        if(mot[i] != game->grille_act[index]){
+            sprintf(raison, "POS mot[%d]: %c != %c : traj[%c%c]", i, mot[i], 
+                game->grille_act[index], traj[i*2], traj[i*2+1]);
+            return FALSE;
         }
 
-        //si trajectoire bonne, on verifie le dictionnaire
-        if(traj_valide == TRUE){
+        if(i > 0){
+           if( (!(x_prec-1 <= x && x <= x_prec+1)) || 
+            (!(y_prec-1 <= y && y <= y_prec+1)) ){
+            sprintf(raison, "POS %c%c et %c%c non adjacents",
+                traj[(i-1)*2], traj[(i-1)*2+1], traj[i*2], traj[i*2+1]);
+            return FALSE;
+           }
+        }
 
-            //boucle de verification du mot dans le dico
-            char ligne[17] = { 0 };
-            FILE* dico = fopen(DICO_FILENAME, "r");
-            while (!feof(dico) && mot_valide==FALSE){
-                fgets(ligne, TAILLE_GRILLE-1, dico);
-                char* newline = strchr(ligne, '\n');
-                if (newline != NULL) *newline = '\0';
+        x_prec = x;
+        y_prec = y;
+    }
 
-                if(strcmp(mot, ligne) == 0) {
-                    mot_valide = TRUE;
-                    break;
+    //boucle de verification du mot dans le dictionnaire
+    boolean dans_le_dico = FALSE;
+    char ligne[17] = { 0 };
+    FILE* dico = fopen(DICO_FILENAME, "r");
+    while (!feof(dico)){
+        fgets(ligne, TAILLE_GRILLE-1, dico);
+        char* newline = strchr(ligne, '\n');
+        if (newline != NULL) *newline = '\0';
+
+        if(strcmp(mot, ligne) == 0) {
+            dans_le_dico = TRUE;
+            break;
+        }
+    }
+    if(dans_le_dico == FALSE){
+            sprintf(raison, "DIC mot non trouve dans le dictionnaire");
+            return FALSE;
+    }
+
+    //boucle de verification mot deja pris par soi meme
+    propos* temp = clients[slot]->list_prop;
+    while(temp != NULL){
+        if(strcmp(mot, temp->mot) == 0){
+            sprintf(raison, "PRI vous avez deja pris ce mot");
+            return FALSE;
+        }
+        temp = temp->next;
+    }
+
+    //boucle de verification mot deja pris par un autre joueur
+    //(option -immediat active pour le serveur)
+    //(si -immediat non active, voir calcul_scores() qui zappera les mots non uniques)
+    if(immediat == TRUE){
+        for(i=0; i<MAX_CLIENTS; i++){
+            if( (i != slot) && (clients[i]->is_ready == TRUE) ){
+                temp = clients[i]->list_prop;
+
+                while(temp != NULL){
+                    if(strcmp(mot, temp->mot) == 0){
+                        sprintf(raison, "PRI %s a deja pris ce mot", clients[i]->user);
+                        return FALSE;
+                    }
                 }
             }
-            sprintf(raison, "DIC mot non trouve dans le dictionnaire");
         }
     }
 
-    return (traj_valide && mot_valide);
+
+
+    return TRUE;
 }
 
-void ajout_prop(propos** ptr_list_prop, char* mot, boolean valide){
+void ajout_prop(propos** ptr_list_prop, char* mot){
     propos* nouv = (propos*) malloc (sizeof(propos));
-    nouv->valide = valide;
     nouv->mot = strndup(mot, TAILLE_GRILLE);
     nouv->next = *ptr_list_prop;
 

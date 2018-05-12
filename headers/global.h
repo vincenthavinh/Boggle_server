@@ -36,7 +36,6 @@ typedef enum { FALSE, TRUE } boolean;
 typedef struct propos_struct propos; 
 struct propos_struct{
 	char* mot;
-	boolean valide;
 	propos* next;
 };
 

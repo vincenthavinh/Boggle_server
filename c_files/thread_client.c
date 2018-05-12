@@ -148,15 +148,15 @@ void comm_sort(int slot){
 void comm_trouve(int slot, char* mot, char* traj){
 	char raison[60] = { 0 };
 
-	boolean prop_valide = est_valide(mot, traj, raison);
+	boolean prop_valide = est_valide(slot, mot, traj, raison);
 
 	char buffer_out[BUF_SIZE] = { 0 };
 
-	//on stocke la proposition dans la liste des propositions du client.
-	ajout_prop(&(clients[slot]->list_prop) , mot, prop_valide);
-
 	//envoi du message conditionnel
-	if(prop_valide){
+	if(prop_valide == TRUE){
+		//on stocke la proposition dans la liste des propositions du client.
+		ajout_prop(&(clients[slot]->list_prop) , mot);
+
 		//message MVALIDE
 		strcat(buffer_out, "MVALIDE/");
 		strcat(buffer_out, mot);

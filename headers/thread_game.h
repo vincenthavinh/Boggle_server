@@ -11,8 +11,8 @@ void msg_bilanmots();
 void msg_vainqueur();
 
 void init_grille();
-boolean est_valide(char* mot, char* traj, char* raison);
-void ajout_prop(propos** prop, char* mot, boolean valide);
+boolean est_valide(int slot, char* mot, char* traj, char* raison);
+void ajout_prop(propos** prop, char* mot);
 void supp_all_props(propos** ptr_list_prop);
 
 void calcul_scores();
