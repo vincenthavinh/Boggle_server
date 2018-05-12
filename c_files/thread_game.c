@@ -14,12 +14,7 @@ void* game_handler(){
         while(game->tour_act < nb_tours){
 
             //setup grille du tour actuel.
-            if(opt_grilles == TRUE){
-                game->grille_act = grilles[game->tour_act % nb_grilles];
-            }else{
-                printf("GENERER GRILLE ALEA A FAIRE\n");
-                exit(1);
-            }
+            init_grille();
 
             //debut du tour
             printf("DEBUT TOUR\n");
@@ -79,6 +74,66 @@ void* game_handler(){
     }
 
     return NULL;
+}
+
+void init_grille(){
+    if(opt_grilles == TRUE){
+        game->grille_act = grilles[game->tour_act % nb_grilles];
+    }else{
+        char des[16][6] = {{'E','T','U','K','N','O'},
+                       {'E','V','G','T','I','N'},
+                       {'D','E','C','A','M','P'},
+                       {'I','E','L','R','U','W'},
+                       {'E','H','I','F','S','E'},
+                       {'R','E','C','A','L','S'},
+                       {'E','N','T','D','O','S'},
+                       {'O','F','X','R','I','A'},
+                       {'N','A','V','E','D','Z'},
+                       {'E','I','O','A','T','A'},
+                       {'G','L','E','N','Y','U'},
+                       {'B','M','A','Q','J','O'},
+                       {'T','L','I','B','R','A'},
+                       {'S','P','U','L','T','E'},
+                       {'A','I','M','S','O','R'},
+                       {'E','N','H','R','I','S'}};
+
+        int choix[16] = { -1 };
+        srand(time(NULL));     
+
+        //ordre ede selection des des;
+        int i;
+        for(i=0; i<16; i++){
+            int random = rand()%16;
+            boolean deja_choisi = FALSE;
+
+            int j;
+            for(j=0; j<i; j++){
+                if(choix[j] ==  random){
+                    deja_choisi = TRUE;
+                    break;
+                }
+            }
+
+            if(deja_choisi == FALSE){
+                choix[i] = random;
+            }else{
+                i--;
+            }
+        }
+
+        //for(i=0; i<16; i++) printf("%d, ", choix[i]);
+        //printf("\n");    
+
+        for(i=0; i<16; i++){
+            int random = rand()%6;
+            game->grille_act[i] = des[choix[i]][random];
+
+            //printf("%d, %c, %d\n", choix[i], game->grille_act[i], random);
+        }
+
+        //printf("grille_act : %s, last:%d \n", game->grille_act, game->grille_act[16]);
+
+    }
 }
 
 void calcul_scores(){

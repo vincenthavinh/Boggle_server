@@ -69,8 +69,7 @@ void init_clients(){
 		clients[i]->score = 0;
 		clients[i]->list_prop = NULL;
 
-		clients[i]->user = (char*) malloc (TAILLE_USER * sizeof(char));
-		memset(clients[i]->user, '\0', TAILLE_USER);
+		clients[i]->user = (char*) calloc (TAILLE_USER, sizeof(char));
 	}
 }
 
@@ -95,7 +94,7 @@ void init_game(){
 	game->client = -1;
 
 	if(opt_grilles == FALSE){
-		game->grille_act = (char*) malloc (TAILLE_GRILLE * sizeof(char));
+		game->grille_act = (char*) calloc (TAILLE_GRILLE, sizeof(char));
 	}
 
 	game->event = (pthread_cond_t*) malloc (sizeof(pthread_cond_t));
@@ -219,10 +218,13 @@ void parse_command_line(int argc, char* argv[]){
 
 void print_args(){
 	printf("========== PARAMETRES SERVEUR ==========\n");
-	printf("port : %d\ntours : %d\nimmediat: %s\ngrilles: %s\nnb_grilles: %d\n", 
-		port, nb_tours, (immediat?"oui":"non"), (opt_grilles?"fixes":"aleatoires"), nb_grilles);
+	printf("port : %d\ntours : %d\nimmediat: %s\ngrilles: %s\n", 
+		port, nb_tours, (immediat?"oui":"non"), (opt_grilles?"fixes":"aleatoires"));
 	int i;
-	for(i=0; i<nb_grilles;i++)
-		printf("%.*s ", TAILLE_GRILLE, grilles[i]);
+	if(opt_grilles){
+		printf("nb_grilles: %d\n", nb_grilles);
+		for(i=0; i<nb_grilles;i++)
+			printf("%.*s ", TAILLE_GRILLE, grilles[i]);
+	}
 	printf("\n========================================\n\n");
 }
