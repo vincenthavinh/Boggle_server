@@ -76,6 +76,10 @@ void init_clients(){
 int ajout_client(int sock_client){
 	int i;
 	for(i=0; i<MAX_CLIENTS; i++){
+
+		//pthread_rwlock_rdlock(game->rwlock);
+		//pthread_rwlock_wrlock(clients[i]->rwlock);
+
 		if(clients[i]->is_co == FALSE){
 			clients[i]->sock = sock_client;
 			clients[i]->is_co = TRUE;
@@ -84,6 +88,10 @@ int ajout_client(int sock_client){
 			memset(clients[i]->user, '\0', TAILLE_USER);
 			break;
 		}
+
+		//pthread_rwlock_unlock(clients[i]->rwlock);
+		//pthread_rwlock_unlock(game->rwlock);
+
 	}
 	return i;
 }
@@ -91,7 +99,6 @@ int ajout_client(int sock_client){
 void init_game(){
 	game = (boggle_game*) malloc (sizeof(boggle_game));
 	game->tour_act = 0;
-	game->client = -1;
 
 	if(opt_grilles == FALSE){
 		game->grille_act = (char*) calloc (TAILLE_GRILLE, sizeof(char));
@@ -100,10 +107,14 @@ void init_game(){
 	game->event = (pthread_cond_t*) malloc (sizeof(pthread_cond_t));
 	pthread_cond_init(game->event, NULL);
 
-	game->mutex = (pthread_mutex_t*) malloc (sizeof(pthread_mutex_t));
-	pthread_mutex_init(game->mutex, NULL);
-}
+	game->mutex_timer = (pthread_mutex_t*) malloc (sizeof(pthread_mutex_t));
+	pthread_mutex_init(game->mutex_timer, NULL);
 
+	game->mutex_clients = (pthread_mutex_t*) malloc (sizeof(pthread_mutex_t));
+	pthread_mutex_init(game->mutex_clients, NULL);
+
+
+}
 
 int init_socket(int port){
 

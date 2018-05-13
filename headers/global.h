@@ -15,7 +15,8 @@
 #include <netinet/in.h>
 
 /*========== macros (constantes) ==========*/
-#define DICO_FILENAME "./dico.txt"
+
+#define DICO_FILENAME "./dico_full_format.txt"
 
 #define TAILLE_GRILLE 17
 #define COTE_GRILLE 4
@@ -51,9 +52,9 @@ typedef struct {
 typedef struct {
 	int tour_act;
 	char* grille_act;
-	int client;
 	pthread_cond_t* event;
-	pthread_mutex_t* mutex;
+	pthread_mutex_t* mutex_timer;
+	pthread_mutex_t* mutex_clients;
 } boggle_game;
 
 /*========== include headers custom ==========*/

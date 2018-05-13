@@ -26,13 +26,20 @@ void* client_handler(void* slot_client) {
 		if(strcmp(commande, "CONNEXION") == 0){
 			//printf("%d: case CONNEXION\n", slot);
 			char* user = strtok_r(NULL, "/", &reste);
+        	
+			pthread_mutex_lock(game->mutex_clients);
         	comm_connexion(slot, user);
+        	pthread_mutex_unlock(game->mutex_clients);
 
 		}
 		/*CAS SORT*/
 		else if(strcmp(commande, "SORT") == 0){
 			//printf("%d: case SORT\n", slot);
+			
+			pthread_mutex_lock(game->mutex_clients);
 			comm_sort(slot);
+			pthread_mutex_unlock(game->mutex_clients);
+
 			bytes_in = 0;
 			break;
 
@@ -42,7 +49,10 @@ void* client_handler(void* slot_client) {
 			//printf("%d: case TROUVE\n", slot);
 			char* mot = strtok_r(NULL, "/", &reste);
 			char* traj = strtok_r(NULL, "/", &reste);
+
+			pthread_mutex_lock(game->mutex_clients);
 			comm_trouve(slot, mot, traj);
+			pthread_mutex_unlock(game->mutex_clients);
 		}
 		/*CAS ENVOI*/
 		else if(strcmp(commande, "ENVOI") == 0){
@@ -72,12 +82,16 @@ void* client_handler(void* slot_client) {
 		printf("CO FINIE client %d, close socket %d\n", slot, clients[slot]->sock);
 		close(clients[slot]->sock);
 
+		pthread_mutex_lock(game->mutex_clients);
+
 		/*on supprime sa liste de propositions (desallocation)*/
 		supp_all_props(&(clients[slot]->list_prop));
 
 		/*on passe le client en deconnecte*/
 		clients[slot]->is_co = FALSE;
 		clients[slot]->is_ready = FALSE;
+
+		pthread_mutex_unlock(game->mutex_clients);
 
 		//on incremente la semaphore de slots clients disponibles
 		sem_post(slots_clients);

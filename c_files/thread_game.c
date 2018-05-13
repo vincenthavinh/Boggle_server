@@ -12,6 +12,8 @@ void* game_handler(){
 
         //boucle des tours
         while(game->tour_act < nb_tours){
+            //on empeche les clients de lire les donnees du jeu.
+            pthread_mutex_lock(game->mutex_clients);
 
             //setup grille du tour actuel.
             init_grille();
@@ -26,16 +28,22 @@ void* game_handler(){
             pthread_t pthread_id;
             pthread_create( &pthread_id , NULL ,  timer_tour, NULL);
 
+            //les clients peuvent lire les informations du jeu
+            pthread_mutex_unlock(game->mutex_clients);
+
             //en Attente du signal du timer (bloquant)
-            pthread_mutex_lock(game->mutex);
-            pthread_cond_wait(game->event, game->mutex);
-            pthread_mutex_unlock(game->mutex);
+            pthread_mutex_lock(game->mutex_timer);
+            pthread_cond_wait(game->event, game->mutex_timer);
+            pthread_mutex_unlock(game->mutex_timer);
 
             //Fin du tour
             printf("TOUR FINI\n");
 
             //message RFIN
             msg_rfin();
+
+            //lock des clients sur les ressources
+            pthread_mutex_lock(game->mutex_clients);
 
             //calcul et attribution des scores du tour
             calcul_scores();
@@ -50,6 +58,8 @@ void* game_handler(){
                     supp_all_props(&(clients[i]->list_prop));
                 }
             }
+
+            pthread_mutex_unlock(game->mutex_clients);
 
             //pause resultats entre 2 tours
             sleep(TEMPS_PAUSE);
@@ -66,11 +76,15 @@ void* game_handler(){
 
         sleep(TEMPS_PAUSE);
 
+        pthread_mutex_lock(game->mutex_clients);
+        
         //remise a zero des scores
         int i;
         for(i=0; i<MAX_CLIENTS; i++)
             if(clients[i]->is_ready == TRUE)
                 clients[i]->score = 0;
+
+        pthread_mutex_unlock(game->mutex_clients);
     }
 
     return NULL;
@@ -340,12 +354,17 @@ boolean est_valide(int slot, char* mot, char* traj, char* raison){
 
     //boucle de verification du mot dans le dictionnaire
     boolean dans_le_dico = FALSE;
-    char ligne[17] = { 0 };
+    char ligne[50] = { 0 };
     FILE* dico = fopen(DICO_FILENAME, "r");
     while (!feof(dico)){
-        fgets(ligne, TAILLE_GRILLE-1, dico);
+        memset(ligne, '\0', 50);
+        fgets(ligne, 49, dico);
         char* newline = strchr(ligne, '\n');
+        char* retchar = strchr(ligne, '\r');
         if (newline != NULL) *newline = '\0';
+        if (retchar != NULL) *retchar = '\0';
+
+        //printf("%s | %s | %zd\n", mot, ligne, strlen(ligne));
 
         if(strcmp(mot, ligne) == 0) {
             dans_le_dico = TRUE;
@@ -417,9 +436,9 @@ void* timer_tour(){
 
     sleep(TEMPS_TOUR);
 
-    pthread_mutex_lock(game->mutex);
+    pthread_mutex_lock(game->mutex_timer);
     pthread_cond_signal(game->event);
-    pthread_mutex_unlock(game->mutex);
+    pthread_mutex_unlock(game->mutex_timer);
 
     return NULL;
 }
