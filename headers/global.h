@@ -26,7 +26,7 @@
 
 #define BUF_SIZE 1024
 
-#define TEMPS_TOUR 180
+#define TEMPS_TOUR 600
 #define TEMPS_PAUSE 10
 
 /*========== Definitions de Structures ==========*/

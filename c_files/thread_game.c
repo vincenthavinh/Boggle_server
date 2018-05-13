@@ -148,7 +148,6 @@ void calcul_scores(){
                 //si l'option -immediat n'est pas active, on zappe les mots non uniques
                 boolean est_unique = TRUE;
                 if(immediat == FALSE){
-                    printf("check uniqueeeeeeeeeeeeeeeeeeeeeeee\n");
                     int j;
                     for(j=0; j<MAX_CLIENTS; j++){
                         if( (j != i) && (clients[j]->is_ready == TRUE) ) {
@@ -380,6 +379,7 @@ boolean est_valide(int slot, char* mot, char* traj, char* raison){
                         sprintf(raison, "PRI %s a deja pris ce mot", clients[i]->user);
                         return FALSE;
                     }
+                    temp = temp->next;
                 }
             }
         }
