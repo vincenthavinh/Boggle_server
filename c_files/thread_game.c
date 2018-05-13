@@ -270,17 +270,18 @@ void msg_vainqueur(){
     //construction chaine scores
     char scores[BUF_SIZE] = { 0 };
 
-    //sprintf(scores+strlen(scores), "%d", game->tour_act); car on affiche pas nb_tour
+    sprintf(scores+strlen(scores), "%d", game->tour_act);
     int i;
     for(i=0; i<MAX_CLIENTS; i++){
         if(clients[i]->is_ready == TRUE){
+            strcat(scores, "*");
             strcat(scores, clients[i]->user);
             strcat(scores, "*");
             snprintf(scores+strlen(scores), 12, "%d", clients[i]->score);
-            strcat(scores, "*");
+            //strcat(scores, "*");
         }
     }
-     scores[strlen(scores)] = '\0';
+    //scores[strlen(scores)] = '\0';
 
 
     //message RFIN
