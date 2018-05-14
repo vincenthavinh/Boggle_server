@@ -15,7 +15,7 @@ void* client_handler(void* slot_client) {
 		if (bytes_in <=0) break;
 
 		/*affichage du message*/
-		printf("%d: %s", slot, buffer_in);
+		printf("	%d: %s", slot, buffer_in);
 		fflush(stdout);
 
 		/*parsing du message*/
@@ -35,11 +35,7 @@ void* client_handler(void* slot_client) {
 		/*CAS SORT*/
 		else if(strcmp(commande, "SORT") == 0){
 			//printf("%d: case SORT\n", slot);
-			
-			pthread_mutex_lock(game->mutex_clients);
 			comm_sort(slot);
-			pthread_mutex_unlock(game->mutex_clients);
-
 			bytes_in = 0;
 			break;
 
@@ -71,7 +67,7 @@ void* client_handler(void* slot_client) {
 		}
 		/*COMMANDE NON TROUVEE*/
 		else{
-			printf("%d: probleme COMMANDE non reconnue: %s\n", slot, commande);
+			printf("	%d: probleme COMMANDE non reconnue: %s\n", slot, commande);
 		}
 
 		memset(buffer_in, '\0', BUF_SIZE);
@@ -102,7 +98,7 @@ void* client_handler(void* slot_client) {
 
 void comm_connexion(int slot, char* user){
 	if(clients[slot]->is_ready == TRUE){
-		printf("%d: erreur, CONNEXION/ deja recu pour ce client.\n", slot);
+		printf("	%d: erreur, CONNEXION/ deja recu pour ce client.\n", slot);
 		return;
 	}
 

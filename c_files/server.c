@@ -237,5 +237,7 @@ void print_args(){
 		for(i=0; i<nb_grilles;i++)
 			printf("%.*s ", TAILLE_GRILLE, grilles[i]);
 	}
+	printf("temps par tour: %d sec\ntemps des pauses: %d sec\n", TEMPS_TOUR, TEMPS_PAUSE);
+
 	printf("\n========================================\n\n");
 }
