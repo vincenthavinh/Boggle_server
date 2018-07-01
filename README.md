@@ -3,7 +3,10 @@
 **Partie serveur (en C) du projet de PC2R 1718
 Sorbonne Universite (ex UPMC)**
 
-*Pour la partie client, voir le repo de mon binome :  
+*Le projet dans son ensemble (client + serveur) a obtenu 18/20.
+Nous n'avons pas le détail de la notation.*
+
+*Pour la **partie client** (en java), voir le repo de mon binome :  
 https://github.com/Hephixor/PC2R_BOGGLE_PROJECT*
 
 
